@@ -104,7 +104,7 @@ def base_layout(title, color="#00e676"):
 
 # ── HLAVIČKA ───────────────────────────────────────
 st.markdown('<div class="page-title">📈 DAM Forecast</div>', unsafe_allow_html=True)
-st.caption("Day-Ahead Market – forecast cen elektřiny CZ | BESS dispatch optimalizace")
+st.caption("Day-Ahead Market – forecast cen elektřiny CZ")
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 if not DB_OK:
