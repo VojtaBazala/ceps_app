@@ -14,87 +14,89 @@ st.set_page_config(
     layout="wide"
 )
 
-st.markdown("""
+# ── TÉMA ───────────────────────────────────────────
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = True
+
+if st.session_state.dark_mode:
+    BG       = "#0a0e1a"
+    PANEL    = "#0f1628"
+    BORDER   = "#1e2d50"
+    TEXT     = "#cdd8f0"
+    SUBTEXT  = "#8899bb"
+    PLOT_BG  = "#0f1628"
+    PAPER_BG = "#0a0e1a"
+    GRID_COL = "#1e2d50"
+    FONT_COL = "#cdd8f0"
+    BTN_TEMA = "☀️ Light"
+else:
+    BG       = "#f5f7fa"
+    PANEL    = "#ffffff"
+    BORDER   = "#dde3ef"
+    TEXT     = "#1a2035"
+    SUBTEXT  = "#6677aa"
+    PLOT_BG  = "#ffffff"
+    PAPER_BG = "#f5f7fa"
+    GRID_COL = "#dde3ef"
+    FONT_COL = "#1a2035"
+    BTN_TEMA = "🌙 Dark"
+
+st.markdown(f"""
 <style>
-  #MainMenu {visibility: hidden;}
-  footer {visibility: hidden;}
-  header {visibility: hidden;}
-  .block-container { padding-top: 1.5rem; padding-bottom: 1rem; }
+  #MainMenu {{visibility: hidden;}}
+  footer {{visibility: hidden;}}
+  header {{visibility: hidden;}}
+  .block-container {{ padding-top: 1.5rem; padding-bottom: 1rem; background: {BG}; }}
+  .stApp {{ background: {BG}; }}
 
-  .ceps-title {
+  .ceps-title {{
     font-family: 'Courier New', monospace;
-    font-size: 2rem;
-    font-weight: 700;
-    color: #00c8ff;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    margin-bottom: 0.2rem;
-  }
-  .status-bar {
-    font-size: 0.8rem;
-    color: #8899bb;
-    margin-bottom: 1rem;
-    font-family: monospace;
-  }
-  .status-bar .ok   { color: #00e676; }
-  .status-bar .warn { color: #ffd740; }
+    font-size: 2rem; font-weight: 700; color: #00c8ff;
+    letter-spacing: 4px; text-transform: uppercase; margin-bottom: 0.2rem;
+  }}
+  .status-bar {{
+    font-size: 0.8rem; color: {SUBTEXT}; margin-bottom: 1rem; font-family: monospace;
+  }}
+  .status-bar .ok   {{ color: #00e676; }}
+  .status-bar .warn {{ color: #ffd740; }}
+  .divider {{ border-top: 1px solid {BORDER}; margin: 0.8rem 0; }}
+  .col-box {{ padding: 0 10px; height: 100%; }}
 
-  .divider { border-top: 1px solid #1e2d50; margin: 0.8rem 0; }
+  .col-header {{
+    font-family: 'Courier New', monospace; font-size: 0.7rem;
+    letter-spacing: 3px; text-transform: uppercase;
+    border-bottom: 2px solid; padding-bottom: 6px; margin-bottom: 14px;
+  }}
+  .col-header.freq {{ border-color: #00c8ff; color: #00c8ff; }}
+  .col-header.cena {{ border-color: #00e676; color: #00e676; }}
+  .col-header.svr  {{ border-color: #ffd740; color: #ffd740; }}
 
-  .col-box { padding: 0 10px; height: 100%; }
-
-  .col-header {
+  .val-big {{
+    font-family: 'Courier New', monospace; font-size: 2rem;
+    font-weight: 700; line-height: 1.1; color: #00c8ff; margin-bottom: 4px;
+  }}
+  .row-item {{
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 5px 0; border-bottom: 1px solid {BORDER};
     font-family: 'Courier New', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    border-bottom: 2px solid;
-    padding-bottom: 6px;
-    margin-bottom: 14px;
-  }
-  .col-header.freq { border-color: #00c8ff; color: #00c8ff; }
-  .col-header.cena { border-color: #00e676; color: #00e676; }
-  .col-header.svr  { border-color: #ffd740; color: #ffd740; }
+  }}
+  .row-item:last-child {{ border-bottom: none; }}
+  .row-name  {{ font-size: 0.7rem; color: {SUBTEXT}; letter-spacing: 1px; }}
+  .row-value {{ font-size: 0.95rem; font-weight: 700; color: {TEXT}; }}
 
-  .val-big {
+  .section-label {{
+    font-size: 0.62rem; color: {SUBTEXT}; text-transform: uppercase;
+    letter-spacing: 1px; margin-top: 12px; margin-bottom: 4px;
     font-family: 'Courier New', monospace;
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1.1;
-    color: #00c8ff;
-    margin-bottom: 4px;
-  }
-
-  .row-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 0;
-    border-bottom: 1px solid #1e2d50;
-    font-family: 'Courier New', monospace;
-  }
-  .row-item:last-child { border-bottom: none; }
-  .row-name  { font-size: 0.7rem; color: #8899bb; letter-spacing: 1px; }
-  .row-value { font-size: 0.95rem; font-weight: 700; }
-
-  .section-label {
-    font-size: 0.62rem;
-    color: #8899bb;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 12px;
-    margin-bottom: 4px;
-    font-family: 'Courier New', monospace;
-  }
-
-  .freq-status {
+  }}
+  .freq-status {{
     display: inline-block; padding: 2px 10px; border-radius: 3px;
     font-size: 0.7rem; font-family: 'Courier New', monospace;
     letter-spacing: 1px; margin-bottom: 10px;
-  }
-  .freq-ok   { background: rgba(0,230,118,0.15); color: #00e676; }
-  .freq-warn { background: rgba(255,215,64,0.15);  color: #ffd740; }
-  .freq-crit { background: rgba(255,61,87,0.15);   color: #ff3d57; }
+  }}
+  .freq-ok   {{ background: rgba(0,230,118,0.15); color: #00e676; }}
+  .freq-warn {{ background: rgba(255,215,64,0.15); color: #ffd740; }}
+  .freq-crit {{ background: rgba(255,61,87,0.15);  color: #ff3d57; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -175,8 +177,7 @@ date_to   = now
 # ── HLAVIČKA ───────────────────────────────────────
 st.markdown('<div class="ceps-title">⚡ ČEPS online</div>', unsafe_allow_html=True)
 
-# Tlačítka – refresh vlevo, DAM Forecast vpravo
-c1, c2, _sp, c3, c4 = st.columns([2, 2, 4, 2, 2])
+c1, c2, _sp, c3, c4 = st.columns([2, 2, 3, 2, 2])
 with c1:
     if st.button("🔄 Obnovit data", use_container_width=True):
         st.cache_data.clear()
@@ -195,11 +196,14 @@ with c2:
             st.cache_data.clear()
             st.session_state.last_update  = datetime.now(TZ)
             st.rerun()
+with c3:
+    if st.button(BTN_TEMA, use_container_width=True):
+        st.session_state.dark_mode = not st.session_state.dark_mode
+        st.rerun()
 with c4:
     if st.button("📈 DAM Forecast", use_container_width=True):
         st.switch_page("pages/1_DAM_Forecast.py")
 
-# Stavový řádek
 if st.session_state.last_update:
     lu = st.session_state.last_update
     if lu.tzinfo is None:
@@ -227,7 +231,6 @@ else:
 st.markdown(status_html, unsafe_allow_html=True)
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ── DATA ───────────────────────────────────────────
 with st.spinner("Načítám data..."):
     try:
         data = stahni_data(date_from, date_to)
@@ -244,7 +247,6 @@ svr_nazvy  = data["svr_nazvy"]
 cena_nazvy = data["cena_nazvy"]
 delty      = vypocti_delty(df_freq)
 
-# ── TŘI SLOUPCE ────────────────────────────────────
 col_freq, _g1, col_cena, _g2, col_svr = st.columns([3, 0.2, 3, 0.2, 3])
 
 with col_freq:
@@ -267,9 +269,9 @@ with col_freq:
         html_delty = ""
         for label, val in delty.items():
             if val is None:
-                val_str, color = "—", "#8899bb"
+                val_str, color = "—", SUBTEXT
             else:
-                color   = "#00e676" if val > 0 else "#ff3d57" if val < 0 else "#8899bb"
+                color   = "#00e676" if val > 0 else "#ff3d57" if val < 0 else SUBTEXT
                 val_str = f"{val:+.4f} MWh"
             html_delty += (
                 f'<div class="row-item">'
@@ -280,10 +282,10 @@ with col_freq:
         st.markdown(html_delty, unsafe_allow_html=True)
         st.markdown(
             f'<div class="section-label" style="margin-top:14px">Dnešní rozsah</div>'
-            f'<div style="font-family:\'Courier New\',monospace;font-size:0.75rem;color:#8899bb;padding:4px 0;">'
-            f'Min: <span style="color:#cdd8f0">{df_freq["value1"].min():.3f} Hz</span>'
-            f' &nbsp;|&nbsp; Max: <span style="color:#cdd8f0">{df_freq["value1"].max():.3f} Hz</span>'
-            f' &nbsp;|&nbsp; Ø: <span style="color:#cdd8f0">{df_freq["value1"].mean():.3f} Hz</span>'
+            f'<div style="font-family:\'Courier New\',monospace;font-size:0.75rem;color:{SUBTEXT};padding:4px 0;">'
+            f'Min: <span style="color:{TEXT}">{df_freq["value1"].min():.3f} Hz</span>'
+            f' &nbsp;|&nbsp; Max: <span style="color:{TEXT}">{df_freq["value1"].max():.3f} Hz</span>'
+            f' &nbsp;|&nbsp; Ø: <span style="color:{TEXT}">{df_freq["value1"].mean():.3f} Hz</span>'
             f'</div>',
             unsafe_allow_html=True
         )
@@ -335,12 +337,6 @@ with col_svr:
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ── GRAFY ──────────────────────────────────────────
-PLOT_BG  = "#0f1628"
-PAPER_BG = "#0a0e1a"
-GRID_COL = "#1e2d50"
-FONT_COL = "#cdd8f0"
-
 def base_layout(title, color="#00c8ff"):
     return dict(
         title=dict(text=title, font=dict(color=color, size=13, family="Courier New")),
@@ -361,7 +357,7 @@ if not df_freq.empty:
         name="Hz", line=dict(color="#00c8ff", width=1.2),
         hovertemplate="%{x|%H:%M}<br><b>%{y:.3f} Hz</b>",
     ))
-    fig.add_hline(y=50.0, line_dash="dash", line_color="rgba(255,255,255,0.2)")
+    fig.add_hline(y=50.0, line_dash="dash", line_color="rgba(128,128,128,0.4)")
     fig.update_layout(**base_layout("Frekvence [Hz]", "#00c8ff"))
     fig.update_yaxes(tickformat=".3f")
     st.plotly_chart(fig, use_container_width=True)
@@ -395,7 +391,6 @@ if not df_cena.empty:
 
 st.caption("Data: ČEPS, a.s. – Oficiální SOAP API (cepsdata.asmx)")
 
-# ── AUTO-REFRESH ───────────────────────────────────
 if st.session_state.auto_refresh:
     time.sleep(1)
     st.session_state.countdown -= 1
