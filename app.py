@@ -29,14 +29,7 @@ st.markdown("""
     color: #00c8ff;
     letter-spacing: 4px;
     text-transform: uppercase;
-    margin-bottom: 0.1rem;
-  }
-  .sys-time {
-    font-family: 'Courier New', monospace;
-    font-size: 0.85rem;
-    color: #ffd740;
-    letter-spacing: 2px;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.2rem;
   }
   .status-bar {
     font-size: 0.8rem;
@@ -76,8 +69,8 @@ st.markdown("""
   .delta-row:last-child { border-bottom: none; }
   .delta-label { font-size: 0.7rem; color: #8899bb; letter-spacing: 1px; }
   .delta-val   { font-size: 1rem; font-weight: 700; }
-  .delta-val.pos  { color: #ff3d57; }
-  .delta-val.neg  { color: #00e676; }
+  .delta-val.pos  { color: #00e676; }
+  .delta-val.neg  { color: #ff3d57; }
   .delta-val.zero { color: #8899bb; }
 
   .freq-status {
@@ -134,14 +127,14 @@ def nazvy_serii(result):
 # ── VÝPOČET DELT ───────────────────────────────────
 def vypocti_delty(df: pd.DataFrame) -> dict:
     """
-    Delta 1 minuty [MWh/MW] = (50 - f) / 0.2 / 60
+    Delta 1 minuty [MWh/MW] = (f - 50) / 0.2 / 60
     Delta Xh = součet posledních X*60 minutových delt
     """
     if df.empty or "value1" not in df.columns:
         return {"1 hod.": None, "2 hod.": None, "4 hod.": None, "8 hod.": None}
 
     df = df.copy()
-    df["delta_min"] = (50.0 - df["value1"]) / 0.2 / 60.0
+    df["delta_min"] = (df["value1"] - 50.0) / 0.2 / 60.0
 
     delty = {}
     for hodiny, label in [(1, "1 hod."), (2, "2 hod."), (4, "4 hod."), (8, "8 hod.")]:
@@ -169,13 +162,6 @@ def stahni_data(date_from, date_to):
         "cena_nazvy": nazvy_serii(r_cena),
     }
 
-# ── ČAS SEČ/SELČ ───────────────────────────────────
-now_local = datetime.now(TZ)
-# Zjistíme jestli je letní nebo zimní čas
-is_dst    = bool(now_local.dst())
-tz_label  = "SELČ" if is_dst else "SEČ"
-time_str  = now_local.strftime("%d.%m.%Y  %H:%M:%S")
-
 # ── DATOVÝ ROZSAH ──────────────────────────────────
 now       = datetime.now()
 pulnoc    = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -185,16 +171,12 @@ date_to   = now
 
 # ── HLAVIČKA ───────────────────────────────────────
 st.markdown('<div class="ceps-title">⚡ ČEPS online</div>', unsafe_allow_html=True)
-st.markdown(
-    f'<div class="sys-time">🕐 {time_str} {tz_label}</div>',
-    unsafe_allow_html=True
-)
 
 c1, c2, c3, c4 = st.columns([2, 2, 2, 6])
 with c1:
     if st.button("🔄 Obnovit data", use_container_width=True):
         st.cache_data.clear()
-        st.session_state.last_update = datetime.now()
+        st.session_state.last_update = datetime.now(TZ)
         st.session_state.countdown   = st.session_state.refresh_interval
         st.rerun()
 with c2:
@@ -207,11 +189,20 @@ with c2:
             st.session_state.auto_refresh = True
             st.session_state.countdown    = st.session_state.refresh_interval
             st.cache_data.clear()
-            st.session_state.last_update  = datetime.now()
+            st.session_state.last_update  = datetime.now(TZ)
             st.rerun()
 
-last_str = st.session_state.last_update.strftime("%d.%m.%Y %H:%M:%S") \
-           if st.session_state.last_update else "—"
+# Poslední aktualizace v SEČ/SELČ
+if st.session_state.last_update:
+    lu = st.session_state.last_update
+    # Pokud není timezone-aware, přidáme
+    if lu.tzinfo is None:
+        lu = TZ.localize(lu)
+    is_dst   = bool(lu.dst())
+    tz_label = "SELČ" if is_dst else "SEČ"
+    last_str = lu.strftime(f"%d.%m.%Y %H:%M:%S") + f" {tz_label}"
+else:
+    last_str = "—"
 
 if st.session_state.auto_refresh:
     status_html = (
@@ -236,7 +227,7 @@ with st.spinner("Načítám data..."):
     try:
         data = stahni_data(date_from, date_to)
         if st.session_state.last_update is None:
-            st.session_state.last_update = datetime.now()
+            st.session_state.last_update = datetime.now(TZ)
     except Exception as e:
         st.error(f"❌ Chyba: {e}")
         st.stop()
@@ -256,7 +247,6 @@ with col_freq:
     st.markdown('<div class="col-header freq">📡 Frekvence sítě</div>', unsafe_allow_html=True)
     if not df_freq.empty:
         last = df_freq["value1"].iloc[-1]
-        cas  = df_freq["cas"].iloc[-1].strftime("%H:%M:%S")
 
         odchylka = abs(last - 50.0)
         if odchylka < 0.02:
@@ -268,9 +258,8 @@ with col_freq:
 
         st.markdown(f'<div class="val-big freq">{last:.3f} Hz</div>', unsafe_allow_html=True)
         st.markdown(f'<span class="freq-status {stav_cls}">{stav_txt}</span>', unsafe_allow_html=True)
-        st.markdown(f'<div class="val-label">poslední měření: {cas}</div>', unsafe_allow_html=True)
 
-        # Delty – změna SOC 1 MW BESS
+        # Delty
         st.markdown(
             '<div class="val-label" style="margin-top:14px">'
             'Změna kapacity 1 MW BESS za'
@@ -286,10 +275,10 @@ with col_freq:
                 if abs(val) < 0.000001:
                     cls = "zero"
                 elif val > 0:
-                    cls = "pos"   # f < 50 Hz → BESS se nabíjel
+                    cls = "pos"   # f > 50 Hz → BESS se vybíjí
                 else:
-                    cls = "neg"   # f > 50 Hz → BESS se vybíjel
-                val_str = f"{val:+.6f} MWh"
+                    cls = "neg"   # f < 50 Hz → BESS se nabíjí
+                val_str = f"{val:+.4f} MWh"
             html_delty += (
                 f'<div class="delta-row">'
                 f'<span class="delta-label">{label}</span>'
@@ -417,6 +406,6 @@ if st.session_state.auto_refresh:
     st.session_state.countdown -= 1
     if st.session_state.countdown <= 0:
         st.cache_data.clear()
-        st.session_state.last_update = datetime.now()
+        st.session_state.last_update = datetime.now(TZ)
         st.session_state.countdown   = st.session_state.refresh_interval
     st.rerun()
