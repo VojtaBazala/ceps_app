@@ -42,6 +42,15 @@ st.markdown("""
 
   .divider { border-top: 1px solid #1e2d50; margin: 0.8rem 0; }
 
+  /* Sloupec box */
+  .col-box {
+    background: #0f1628;
+    border: 1px solid #1e2d50;
+    border-radius: 6px;
+    padding: 16px 20px;
+    height: 100%;
+  }
+
   .col-header {
     font-family: 'Courier New', monospace;
     font-size: 0.7rem;
@@ -49,34 +58,51 @@ st.markdown("""
     text-transform: uppercase;
     border-bottom: 2px solid;
     padding-bottom: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
   .col-header.freq { border-color: #00c8ff; color: #00c8ff; }
   .col-header.cena { border-color: #00e676; color: #00e676; }
   .col-header.svr  { border-color: #ffd740; color: #ffd740; }
 
-  .val-big { font-family: 'Courier New', monospace; font-size: 2rem; font-weight: 700; line-height: 1.1; }
-  .val-big.freq { color: #00c8ff; }
+  /* Velká hodnota frekvence */
+  .val-big {
+    font-family: 'Courier New', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #00c8ff;
+    margin-bottom: 4px;
+  }
 
-  .val-small { font-family: 'Courier New', monospace; font-size: 0.85rem; color: #cdd8f0; margin: 4px 0; }
-  .val-label { font-size: 0.65rem; color: #8899bb; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; margin-bottom: 2px; }
-
-  .delta-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 5px 0; border-bottom: 1px solid #1e2d50;
+  /* Řádek: název vlevo, hodnota vpravo */
+  .row-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid #1e2d50;
     font-family: 'Courier New', monospace;
   }
-  .delta-row:last-child { border-bottom: none; }
-  .delta-label { font-size: 0.7rem; color: #8899bb; letter-spacing: 1px; }
-  .delta-val   { font-size: 1rem; font-weight: 700; }
-  .delta-val.pos  { color: #00e676; }
-  .delta-val.neg  { color: #ff3d57; }
-  .delta-val.zero { color: #8899bb; }
+  .row-item:last-child { border-bottom: none; }
+  .row-name  { font-size: 0.7rem; color: #8899bb; letter-spacing: 1px; }
+  .row-value { font-size: 0.95rem; font-weight: 700; }
 
+  /* Sekce label */
+  .section-label {
+    font-size: 0.62rem;
+    color: #8899bb;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 12px;
+    margin-bottom: 4px;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* Status badge frekvence */
   .freq-status {
     display: inline-block; padding: 2px 10px; border-radius: 3px;
     font-size: 0.7rem; font-family: 'Courier New', monospace;
-    letter-spacing: 1px; margin-top: 4px; margin-bottom: 8px;
+    letter-spacing: 1px; margin-bottom: 10px;
   }
   .freq-ok   { background: rgba(0,230,118,0.15); color: #00e676; }
   .freq-warn { background: rgba(255,215,64,0.15);  color: #ffd740; }
@@ -126,16 +152,10 @@ def nazvy_serii(result):
 
 # ── VÝPOČET DELT ───────────────────────────────────
 def vypocti_delty(df: pd.DataFrame) -> dict:
-    """
-    Delta 1 minuty [MWh/MW] = (f - 50) / 0.2 / 60
-    Delta Xh = součet posledních X*60 minutových delt
-    """
     if df.empty or "value1" not in df.columns:
         return {"1 hod.": None, "2 hod.": None, "4 hod.": None, "8 hod.": None}
-
     df = df.copy()
     df["delta_min"] = (df["value1"] - 50.0) / 0.2 / 60.0
-
     delty = {}
     for hodiny, label in [(1, "1 hod."), (2, "2 hod."), (4, "4 hod."), (8, "8 hod.")]:
         pocet = hodiny * 60
@@ -195,12 +215,10 @@ with c2:
 # Poslední aktualizace v SEČ/SELČ
 if st.session_state.last_update:
     lu = st.session_state.last_update
-    # Pokud není timezone-aware, přidáme
     if lu.tzinfo is None:
         lu = TZ.localize(lu)
-    is_dst   = bool(lu.dst())
-    tz_label = "SELČ" if is_dst else "SEČ"
-    last_str = lu.strftime(f"%d.%m.%Y %H:%M:%S") + f" {tz_label}"
+    tz_label = "SELČ" if bool(lu.dst()) else "SEČ"
+    last_str = lu.strftime("%d.%m.%Y %H:%M:%S") + f" {tz_label}"
 else:
     last_str = "—"
 
@@ -239,15 +257,17 @@ svr_nazvy  = data["svr_nazvy"]
 cena_nazvy = data["cena_nazvy"]
 delty      = vypocti_delty(df_freq)
 
-# ── TŘI SLOUPCE ────────────────────────────────────
-col_freq, col_cena, col_svr = st.columns(3)
+# ── TŘI SLOUPCE s mezerami ─────────────────────────
+# Mezery jako prázdné sloupce (0.15 šířky)
+col_freq, _g1, col_cena, _g2, col_svr = st.columns([3, 0.2, 3, 0.2, 3])
 
 # ── FREKVENCE ──────────────────────────────────────
 with col_freq:
+    st.markdown('<div class="col-box">', unsafe_allow_html=True)
     st.markdown('<div class="col-header freq">📡 Frekvence sítě</div>', unsafe_allow_html=True)
-    if not df_freq.empty:
-        last = df_freq["value1"].iloc[-1]
 
+    if not df_freq.empty:
+        last     = df_freq["value1"].iloc[-1]
         odchylka = abs(last - 50.0)
         if odchylka < 0.02:
             stav_cls, stav_txt = "freq-ok",   "NORMÁLNÍ"
@@ -256,85 +276,94 @@ with col_freq:
         else:
             stav_cls, stav_txt = "freq-crit",  "KRITICKÁ"
 
-        st.markdown(f'<div class="val-big freq">{last:.3f} Hz</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="val-big">{last:.3f} Hz</div>', unsafe_allow_html=True)
         st.markdown(f'<span class="freq-status {stav_cls}">{stav_txt}</span>', unsafe_allow_html=True)
 
-        # Delty
+        # Delty – název vlevo, hodnota vpravo
         st.markdown(
-            '<div class="val-label" style="margin-top:14px">'
-            'Změna kapacity 1 MW BESS za'
-            '</div>',
+            '<div class="section-label">Změna kapacity 1 MW BESS za</div>',
             unsafe_allow_html=True
         )
-
         html_delty = ""
         for label, val in delty.items():
             if val is None:
-                val_str, cls = "—", "zero"
+                val_str, color = "—", "#8899bb"
             else:
-                if abs(val) < 0.000001:
-                    cls = "zero"
-                elif val > 0:
-                    cls = "pos"   # f > 50 Hz → BESS se vybíjí
-                else:
-                    cls = "neg"   # f < 50 Hz → BESS se nabíjí
+                color   = "#00e676" if val > 0 else "#ff3d57" if val < 0 else "#8899bb"
                 val_str = f"{val:+.4f} MWh"
             html_delty += (
-                f'<div class="delta-row">'
-                f'<span class="delta-label">{label}</span>'
-                f'<span class="delta-val {cls}">{val_str}</span>'
+                f'<div class="row-item">'
+                f'<span class="row-name">{label}</span>'
+                f'<span class="row-value" style="color:{color}">{val_str}</span>'
                 f'</div>'
             )
         st.markdown(html_delty, unsafe_allow_html=True)
 
         # Min/max/průměr
-        st.markdown('<div class="val-label" style="margin-top:12px">Dnešní rozsah</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="val-small">'
-            f'Min: {df_freq["value1"].min():.3f} Hz &nbsp;|&nbsp; '
-            f'Max: {df_freq["value1"].max():.3f} Hz &nbsp;|&nbsp; '
-            f'Ø: {df_freq["value1"].mean():.3f} Hz'
-            f'</div>',
-            unsafe_allow_html=True
+        st.markdown('<div class="section-label" style="margin-top:14px">Dnešní rozsah</div>', unsafe_allow_html=True)
+        rozsah_html = (
+            f'<div class="row-item"><span class="row-name">Min</span>'
+            f'<span class="row-value" style="color:#cdd8f0">{df_freq["value1"].min():.3f} Hz</span></div>'
+            f'<div class="row-item"><span class="row-name">Max</span>'
+            f'<span class="row-value" style="color:#cdd8f0">{df_freq["value1"].max():.3f} Hz</span></div>'
+            f'<div class="row-item"><span class="row-name">Průměr</span>'
+            f'<span class="row-value" style="color:#cdd8f0">{df_freq["value1"].mean():.3f} Hz</span></div>'
         )
+        st.markdown(rozsah_html, unsafe_allow_html=True)
     else:
         st.warning("Žádná data")
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ── CENA RE ────────────────────────────────────────
 with col_cena:
+    st.markdown('<div class="col-box">', unsafe_allow_html=True)
     st.markdown('<div class="col-header cena">💶 Aktuální cena RE</div>', unsafe_allow_html=True)
+
     if not df_cena.empty:
+        barvy_c = {"value1":"#00e676","value2":"#ffd740",
+                   "value3":"#13b8f0","value4":"#4baf4f"}
+        html_cena = ""
         for vid, vname in cena_nazvy.items():
             if vid in df_cena.columns:
                 last  = df_cena[vid].iloc[-1]
-                color = "#00e676" if vid == "value1" else "#ffd740" if vid == "value2" else "#13b8f0"
-                st.markdown(f'<div class="val-label">{vname}</div>', unsafe_allow_html=True)
-                st.markdown(
-                    f'<div class="val-small" style="font-size:1.1rem;color:{color};font-weight:700">'
-                    f'{last:.2f} EUR/MWh</div>',
-                    unsafe_allow_html=True
+                color = barvy_c.get(vid, "#cdd8f0")
+                html_cena += (
+                    f'<div class="row-item">'
+                    f'<span class="row-name">{vname}</span>'
+                    f'<span class="row-value" style="color:{color}">{last:.2f} EUR/MWh</span>'
+                    f'</div>'
                 )
+        st.markdown(html_cena, unsafe_allow_html=True)
     else:
         st.warning("Žádná data")
 
+    st.markdown('</div>', unsafe_allow_html=True)
+
 # ── AKTIVACE SVR ───────────────────────────────────
 with col_svr:
+    st.markdown('<div class="col-box">', unsafe_allow_html=True)
     st.markdown('<div class="col-header svr">📊 Aktivace SVR v ČR</div>', unsafe_allow_html=True)
+
     if not df_svr.empty:
         barvy = {"value1":"#bf2837","value2":"#b1b2b7",
                  "value3":"#fdc82f","value4":"#13b8f0","value7":"#4baf4f"}
+        html_svr = ""
         for vid, vname in svr_nazvy.items():
             if vid in df_svr.columns:
                 last  = df_svr[vid].iloc[-1]
                 color = barvy.get(vid, "#cdd8f0")
-                st.markdown(f'<div class="val-label">{vname}</div>', unsafe_allow_html=True)
-                st.markdown(
-                    f'<div class="val-small" style="font-size:1.1rem;color:{color};font-weight:700">'
-                    f'{last:+.2f} MW</div>',
-                    unsafe_allow_html=True
+                html_svr += (
+                    f'<div class="row-item">'
+                    f'<span class="row-name">{vname}</span>'
+                    f'<span class="row-value" style="color:{color}">{last:+.2f} MW</span>'
+                    f'</div>'
                 )
+        st.markdown(html_svr, unsafe_allow_html=True)
     else:
         st.warning("Žádná data")
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
