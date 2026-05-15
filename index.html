@@ -2,7 +2,6 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ČEPS Dispečink – živá data</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -10,15 +9,15 @@
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&display=swap');
 
   :root {
-    --bg:       #0a0e1a;
-    --panel:    #0f1628;
-    --border:   #1e2d50;
-    --accent:   #00c8ff;
-    --green:    #00e676;
-    --red:      #ff3d57;
-    --yellow:   #ffd740;
-    --gray:     #8899bb;
-    --text:     #cdd8f0;
+    --bg:     #0a0e1a;
+    --panel:  #0f1628;
+    --border: #1e2d50;
+    --accent: #00c8ff;
+    --green:  #00e676;
+    --red:    #ff3d57;
+    --yellow: #ffd740;
+    --gray:   #8899bb;
+    --text:   #cdd8f0;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -84,14 +83,11 @@
     transition: border-color .2s, color .2s;
   }
   .controls input[type="date"]:hover, .controls button:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+    border-color: var(--accent); color: var(--accent);
   }
   .controls button.primary {
-    background: var(--accent);
-    color: #000;
-    font-weight: 600;
-    border-color: var(--accent);
+    background: var(--accent); color: #000;
+    font-weight: 600; border-color: var(--accent);
   }
   .controls button.primary:hover { background: #00a8d8; }
   #auto-label { font-size: .8rem; color: var(--gray); }
@@ -103,9 +99,7 @@
     gap: 20px;
     padding: 24px 32px;
   }
-  @media (max-width: 900px) {
-    .grid { grid-template-columns: 1fr; }
-  }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
 
   .panel {
     background: var(--panel);
@@ -116,10 +110,8 @@
     overflow: hidden;
   }
   .panel::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
   }
   .panel.freq::before { background: var(--accent); }
   .panel.svr::before  { background: var(--yellow); }
@@ -127,29 +119,20 @@
 
   .panel-title {
     font-family: 'Share Tech Mono', monospace;
-    font-size: .75rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--gray);
-    margin-bottom: 4px;
+    font-size: .75rem; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--gray); margin-bottom: 4px;
   }
   .panel-value {
     font-family: 'Share Tech Mono', monospace;
-    font-size: 2.4rem;
-    font-weight: 400;
-    line-height: 1;
-    margin-bottom: 16px;
+    font-size: 2.4rem; font-weight: 400;
+    line-height: 1; margin-bottom: 16px;
   }
   .panel.freq .panel-value { color: var(--accent); }
   .panel.cena .panel-value { color: var(--green); }
   .panel-value .unit { font-size: 1rem; color: var(--gray); margin-left: 6px; }
   .delta {
-    font-size: .8rem;
-    padding: 2px 8px;
-    border-radius: 3px;
-    display: inline-block;
-    margin-left: 10px;
-    vertical-align: middle;
+    font-size: .8rem; padding: 2px 8px; border-radius: 3px;
+    display: inline-block; margin-left: 10px; vertical-align: middle;
   }
   .delta.up   { background: rgba(0,230,118,.15); color: var(--green); }
   .delta.down { background: rgba(255,61,87,.15);  color: var(--red); }
@@ -158,17 +141,13 @@
   canvas { max-height: 220px; }
 
   .svr-metrics {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 16px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; margin-bottom: 16px;
   }
   .svr-m {
     background: rgba(255,255,255,.03);
     border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 10px;
-    text-align: center;
+    border-radius: 4px; padding: 10px; text-align: center;
   }
   .svr-m .label { font-size: .65rem; color: var(--gray); letter-spacing: 1px; margin-bottom: 4px; }
   .svr-m .val   { font-family: 'Share Tech Mono', monospace; font-size: 1rem; }
@@ -177,56 +156,36 @@
   .svr-m.mfrr-p .val { color: #fdc82f; }
   .svr-m.mfrr-n .val { color: #13b8f0; }
 
-  .cena-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: .82rem;
-    margin-top: 4px;
-  }
+  .cena-table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: 4px; }
   .cena-table th {
-    text-align: left;
-    padding: 6px 10px;
-    color: var(--gray);
-    font-size: .7rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    text-align: left; padding: 6px 10px; color: var(--gray);
+    font-size: .7rem; letter-spacing: 1px; text-transform: uppercase;
     border-bottom: 1px solid var(--border);
   }
   .cena-table td {
     padding: 5px 10px;
     border-bottom: 1px solid rgba(30,45,80,.5);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: .82rem;
+    font-family: 'Share Tech Mono', monospace; font-size: .82rem;
   }
   .cena-table tr:hover td { background: rgba(255,255,255,.02); }
   .pos { color: var(--red); }
   .neg { color: #13b8f0; }
 
   .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 80px;
-    color: var(--gray);
-    font-size: .85rem;
-    gap: 10px;
+    display: flex; align-items: center; justify-content: center;
+    height: 80px; color: var(--gray); font-size: .85rem; gap: 10px;
   }
   .spinner {
     width: 16px; height: 16px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .8s linear infinite;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .error-msg { color: var(--red); font-size: .82rem; padding: 12px 0; }
 
   footer {
-    text-align: center;
-    padding: 16px;
-    color: var(--gray);
-    font-size: .75rem;
-    border-top: 1px solid var(--border);
+    text-align: center; padding: 16px; color: var(--gray);
+    font-size: .75rem; border-top: 1px solid var(--border);
   }
   footer a { color: var(--accent); text-decoration: none; }
 </style>
@@ -279,20 +238,22 @@
 </div>
 
 <footer>
-  Data: <a href="https://www.ceps.cz/cs/dispecerske-rizeni" target="_blank">ČEPS, a.s.</a> &mdash;
-  Stránka volá ČEPS API přímo z vašeho prohlížeče &mdash;
+  Data: <a href="https://www.ceps.cz/cs/data" target="_blank">ČEPS, a.s.</a> &mdash;
+  Proxy: Cloudflare Worker &mdash;
   Poslední aktualizace: <span id="last-update">—</span>
 </footer>
 
 <script>
-const BASE     = 'https://www.ceps.cz/cs/data';
-const GRAPH_ID = 1040;
+// ── KONFIGURACE ────────────────────────────────────
+const PROXY  = 'https://ceps-proxy.oldrich-e26.workers.dev/?url=';
+const BASE   = 'https://www.ceps.cz/cs/data';
+const GID    = 1040;
 
-let autoInterval = null;
 let chartFreq = null;
 let chartSvr  = null;
+let autoInterval = null;
 
-// Hodiny
+// ── HODINY ─────────────────────────────────────────
 function updateClock() {
   document.getElementById('clock').textContent =
     new Date().toLocaleTimeString('cs-CZ', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -300,13 +261,13 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// Výchozí datum = dnes
 document.getElementById('date-picker').value = new Date().toISOString().slice(0,10);
 
-// ── FETCH ──────────────────────────────────────────
+// ── FETCH PŘES WORKER ──────────────────────────────
 async function fetchCeps(method) {
-  const url = `${BASE}?do=loadGraphData&method=${encodeURIComponent(method)}&graph_id=${GRAPH_ID}&download=false`;
-  const resp = await fetch(url);
+  const cepsUrl = `${BASE}?do=loadGraphData&method=${encodeURIComponent(method)}&graph_id=${GID}&download=false`;
+  const proxyUrl = PROXY + encodeURIComponent(cepsUrl);
+  const resp = await fetch(proxyUrl);
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const outer = await resp.json();
   const inner = JSON.parse(outer.result);
@@ -318,7 +279,7 @@ function lastNonZero(data) {
     const v = parseFloat(data[i].value);
     if (v !== 0) return v;
   }
-  return parseFloat(data[data.length-1]?.value ?? 0);
+  return 0;
 }
 
 // ── FREKVENCE ──────────────────────────────────────
@@ -331,14 +292,13 @@ async function nactiFrekvenci() {
     const last = vals[vals.length - 1] ?? 50;
     const prev = vals[vals.length - 2] ?? last;
     const diff = last - prev;
-    const deltaClass = diff > 0.001 ? 'up' : diff < -0.001 ? 'down' : 'flat';
-    const deltaSign  = diff > 0 ? '+' : '';
+    const cls  = diff > 0.001 ? 'up' : diff < -0.001 ? 'down' : 'flat';
+    const sign = diff > 0 ? '+' : '';
     document.getElementById('freq-val').innerHTML =
       `${last.toFixed(3)}<span class="unit">Hz</span>
-       <span class="delta ${deltaClass}">${deltaSign}${diff.toFixed(3)}</span>`;
+       <span class="delta ${cls}">${sign}${diff.toFixed(3)}</span>`;
 
-    const filtered = s.data.filter(p => parseFloat(p.value) > 0);
-    const show   = filtered.slice(-360);
+    const show   = s.data.filter(p => parseFloat(p.value) > 0).slice(-360);
     const labels = show.map(p => p.x.slice(11,16));
     const data   = show.map(p => parseFloat(p.value));
 
@@ -350,19 +310,14 @@ async function nactiFrekvenci() {
         labels,
         datasets: [
           {
-            data,
-            borderColor: '#00c8ff',
-            borderWidth: 1.5,
-            pointRadius: 0,
-            tension: 0.3,
+            data, borderColor: '#00c8ff', borderWidth: 1.5,
+            pointRadius: 0, tension: 0.3,
             fill: { target: 'origin', above: 'rgba(0,200,255,0.05)', below: 'rgba(255,61,87,0.05)' }
           },
           {
             data: data.map(() => 50),
-            borderColor: 'rgba(255,255,255,0.15)',
-            borderWidth: 1,
-            borderDash: [4,4],
-            pointRadius: 0,
+            borderColor: 'rgba(255,255,255,0.15)', borderWidth: 1,
+            borderDash: [4,4], pointRadius: 0,
           }
         ]
       },
@@ -391,8 +346,7 @@ async function nactiSVR() {
       label: s.name,
       data: s.data.map(p => parseFloat(p.value)),
       backgroundColor: s.fill + '99',
-      borderColor: s.fill,
-      borderWidth: 1,
+      borderColor: s.fill, borderWidth: 1,
     }));
 
     wrap.innerHTML = '<canvas id="chart-svr"></canvas>';
@@ -422,8 +376,7 @@ async function nactiCenuRE() {
     series.forEach(s => {
       const nonzero = s.data.filter(p => parseFloat(p.value) !== 0).slice(-20);
       if (!nonzero.length) return;
-      const isPos = s.name.includes('+');
-      const color = isPos ? 'var(--red)' : '#13b8f0';
+      const color = s.name.includes('+') ? 'var(--red)' : '#13b8f0';
       const last  = parseFloat(nonzero[nonzero.length-1].value);
       html += `
         <div>
@@ -466,17 +419,13 @@ function yAxis(unit) {
 }
 function chartOpts(unit, decimals) {
   return {
-    responsive: true,
-    animation: false,
+    responsive: true, animation: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { labels: { color: '#8899bb', font: { size: 11 } } },
       tooltip: {
-        backgroundColor: '#0f1628',
-        borderColor: '#1e2d50',
-        borderWidth: 1,
-        titleColor: '#00c8ff',
-        bodyColor: '#cdd8f0',
+        backgroundColor: '#0f1628', borderColor: '#1e2d50', borderWidth: 1,
+        titleColor: '#00c8ff', bodyColor: '#cdd8f0',
         callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(decimals)} ${unit}` }
       }
     },
