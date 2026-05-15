@@ -36,7 +36,6 @@ if "dark_mode" not in st.session_state:
 
 if st.session_state.dark_mode:
     BG       = "#0a0e1a"
-    PANEL    = "#0f1628"
     BORDER   = "#1e2d50"
     TEXT     = "#cdd8f0"
     SUBTEXT  = "#8899bb"
@@ -44,10 +43,10 @@ if st.session_state.dark_mode:
     PAPER_BG = "#0a0e1a"
     GRID_COL = "#1e2d50"
     FONT_COL = "#cdd8f0"
-    BTN_TEMA = "☀️ Light"
+    LEG_COL  = "#cdd8f0"
+    BTN_TEMA = "☀️"
 else:
     BG       = "#f5f7fa"
-    PANEL    = "#ffffff"
     BORDER   = "#dde3ef"
     TEXT     = "#1a2035"
     SUBTEXT  = "#6677aa"
@@ -55,14 +54,15 @@ else:
     PAPER_BG = "#f5f7fa"
     GRID_COL = "#dde3ef"
     FONT_COL = "#1a2035"
-    BTN_TEMA = "🌙 Dark"
+    LEG_COL  = "#1a2035"
+    BTN_TEMA = "🌙"
 
 st.markdown(f"""
 <style>
   #MainMenu {{visibility: hidden;}}
   footer {{visibility: hidden;}}
   header {{visibility: hidden;}}
-  .block-container {{ padding-top: 1.5rem; background: {BG}; }}
+  .block-container {{ padding-top: 1.2rem; background: {BG}; }}
   .stApp {{ background: {BG}; }}
 
   .page-title {{
@@ -87,45 +87,63 @@ st.markdown(f"""
   }}
   .row-item:last-child {{ border-bottom: none; }}
   .row-name  {{ font-size: 0.7rem; color: {SUBTEXT}; letter-spacing: 1px; }}
-  .row-value {{ font-size: 0.95rem; font-weight: 700; color: {TEXT}; }}
+  .row-value {{ font-size: 0.95rem; font-weight: 700; }}
+
+  /* Subtilní tlačítka */
+  div[data-testid="stButton"] button {{
+    background: transparent !important;
+    border: 1px solid {BORDER} !important;
+    color: {SUBTEXT} !important;
+    font-size: 0.8rem !important;
+    padding: 4px 10px !important;
+    font-family: 'Courier New', monospace !important;
+  }}
+  div[data-testid="stButton"] button:hover {{
+    border-color: #00e676 !important;
+    color: #00e676 !important;
+  }}
 </style>
 """, unsafe_allow_html=True)
-
-PLOT_BG  = PLOT_BG
-PAPER_BG = PAPER_BG
-GRID_COL = GRID_COL
-FONT_COL = FONT_COL
 
 def base_layout(title, color="#00e676", height=280):
     return dict(
         title=dict(text=title, font=dict(color=color, size=13, family="Courier New")),
         paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
-        font=dict(color=FONT_COL, family="Courier New", size=10),
+        font=dict(color=LEG_COL, family="Courier New", size=11),
         hovermode="x unified",
-        legend=dict(bgcolor=PLOT_BG, bordercolor=GRID_COL, font=dict(size=10)),
-        xaxis=dict(gridcolor=GRID_COL, showgrid=True),
-        yaxis=dict(gridcolor=GRID_COL, showgrid=True),
+        legend=dict(
+            bgcolor=PLOT_BG, bordercolor=BORDER,
+            font=dict(size=11, color=LEG_COL),
+        ),
+        xaxis=dict(gridcolor=GRID_COL, showgrid=True, color=LEG_COL),
+        yaxis=dict(gridcolor=GRID_COL, showgrid=True, color=LEG_COL),
         margin=dict(l=50, r=10, t=40, b=30),
         height=height,
     )
 
 # ── HLAVIČKA ───────────────────────────────────────
-st.markdown('<div class="page-title">📈 DAM Forecast</div>', unsafe_allow_html=True)
-
-_sp, c_tema, c_btn = st.columns([6, 2, 2])
-with c_tema:
-    if st.button(BTN_TEMA, use_container_width=True):
-        st.session_state.dark_mode = not st.session_state.dark_mode
-        st.rerun()
-with c_btn:
-    if st.button("⚡ ČEPS online", use_container_width=True):
-        st.switch_page("CEPS_online.py")
+header_l, header_r = st.columns([7, 3])
+with header_l:
+    st.markdown('<div class="page-title">📈 DAM Forecast</div>', unsafe_allow_html=True)
+with header_r:
+    nav_sp, nav_sel, nav_tema = st.columns([1, 3, 1])
+    with nav_sel:
+        nav = st.selectbox(
+            "", ["— Přejít na —", "⚡ ČEPS online"],
+            key="nav_dam", label_visibility="collapsed"
+        )
+        if nav == "⚡ ČEPS online":
+            st.switch_page("CEPS_online.py")
+    with nav_tema:
+        if st.button(BTN_TEMA, use_container_width=True):
+            st.session_state.dark_mode = not st.session_state.dark_mode
+            st.rerun()
 
 st.markdown(
-    '<div style="font-family:\'Courier New\',monospace;font-size:0.85rem;'
-    'color:#cdd8f0;letter-spacing:1px;margin-bottom:4px;">'
-    'Predikce hodinových cen na následující den; aktualizace obvykle do 7:30 D-1'
-    '</div>',
+    f'<div style="font-family:\'Courier New\',monospace;font-size:0.85rem;'
+    f'color:{TEXT};letter-spacing:1px;margin-bottom:4px;">'
+    f'Automatická predikce hodinových cen na následující den; aktualizace přibližně v 7:00 D-1'
+    f'</div>',
     unsafe_allow_html=True
 )
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
@@ -292,14 +310,17 @@ if not df_hist.empty and not df_prices.empty:
                     )
         fig2.update_layout(
             paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
-            font=dict(color=FONT_COL, family="Courier New", size=10),
+            font=dict(color=LEG_COL, family="Courier New", size=11),
             hovermode="x unified", height=180 * n,
             margin=dict(l=50, r=10, t=30, b=20),
-            legend=dict(bgcolor=PLOT_BG, bordercolor=GRID_COL, orientation="h", y=1.02, x=0),
+            legend=dict(bgcolor=PLOT_BG, bordercolor=BORDER,
+                       font=dict(size=11, color=LEG_COL),
+                       orientation="h", y=1.02, x=0),
         )
         for i in range(1, n + 1):
-            fig2.update_xaxes(gridcolor=GRID_COL, showgrid=True, tickmode="linear", tick0=0, dtick=2, row=i, col=1)
-            fig2.update_yaxes(gridcolor=GRID_COL, showgrid=True, row=i, col=1)
+            fig2.update_xaxes(gridcolor=GRID_COL, showgrid=True, color=LEG_COL,
+                              tickmode="linear", tick0=0, dtick=2, row=i, col=1)
+            fig2.update_yaxes(gridcolor=GRID_COL, showgrid=True, color=LEG_COL, row=i, col=1)
             fig2.layout.annotations[i-1].font.color = SUBTEXT
             fig2.layout.annotations[i-1].font.size  = 11
         st.plotly_chart(fig2, use_container_width=True)
