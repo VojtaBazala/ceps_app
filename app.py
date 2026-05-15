@@ -44,10 +44,7 @@ st.markdown("""
 
   /* Sloupec box */
   .col-box {
-    background: #0f1628;
-    border: 1px solid #1e2d50;
-    border-radius: 6px;
-    padding: 16px 20px;
+    padding: 0 10px;
     height: 100%;
   }
 
