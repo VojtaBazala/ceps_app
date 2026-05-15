@@ -180,7 +180,9 @@ def stahni_data(date_from, date_to):
     }
 
 # ── DATOVÝ ROZSAH ──────────────────────────────────
-now       = datetime.now()
+# Datový rozsah v lokálním čase CET/CEST (ČEPS API vyžaduje lokální čas)
+now_local = datetime.now(TZ)
+now       = now_local.replace(tzinfo=None)  # naive datetime pro SOAP API
 pulnoc    = now.replace(hour=0, minute=0, second=0, microsecond=0)
 osm_h     = now - timedelta(hours=8)
 date_from = min(pulnoc, osm_h)
