@@ -2,6 +2,7 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ČEPS Dispečink – živá data</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -338,13 +339,7 @@ async function fetchCeps(method) {
   const dateStr = document.getElementById('date-picker').value; // YYYY-MM-DD
   const [y, m, d] = dateStr.split('-');
   const url = `${BASE}?do=loadGraphData&method=${encodeURIComponent(method)}&graph_id=${GRAPH_ID}&download=false`;
-  const resp = await fetch(url, {
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest',
-      'Accept': 'application/json, text/javascript, */*; q=0.01',
-      'Referer': 'https://www.ceps.cz/cs/dispecerske-rizeni',
-    }
-  });
+  const resp = await fetch(url);
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const outer = await resp.json();
   const inner = JSON.parse(outer.result);
