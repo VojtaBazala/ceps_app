@@ -92,8 +92,9 @@ def base_layout(title, color="#00e676", height=280):
 # ── HLAVIČKA ───────────────────────────────────────
 st.markdown('<div class="page-title">📈 DAM Forecast</div>', unsafe_allow_html=True)
 
-c1, c2 = st.columns([2, 8])
-with c1:
+# Tlačítko ČEPS online vpravo
+_sp, c_btn = st.columns([8, 2])
+with c_btn:
     if st.button("⚡ ČEPS online", use_container_width=True):
         st.switch_page("CEPS_online.py")
 
