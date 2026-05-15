@@ -175,7 +175,8 @@ date_to   = now
 # ── HLAVIČKA ───────────────────────────────────────
 st.markdown('<div class="ceps-title">⚡ ČEPS online</div>', unsafe_allow_html=True)
 
-c1, c2, _sp, c3 = st.columns([2, 2, 5, 2])
+# Tlačítka – refresh vlevo, DAM Forecast vpravo
+c1, c2, _sp, c3, c4 = st.columns([2, 2, 4, 2, 2])
 with c1:
     if st.button("🔄 Obnovit data", use_container_width=True):
         st.cache_data.clear()
@@ -194,10 +195,11 @@ with c2:
             st.cache_data.clear()
             st.session_state.last_update  = datetime.now(TZ)
             st.rerun()
-with c3:
+with c4:
     if st.button("📈 DAM Forecast", use_container_width=True):
         st.switch_page("pages/1_DAM_Forecast.py")
 
+# Stavový řádek
 if st.session_state.last_update:
     lu = st.session_state.last_update
     if lu.tzinfo is None:
@@ -225,6 +227,7 @@ else:
 st.markdown(status_html, unsafe_allow_html=True)
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
+# ── DATA ───────────────────────────────────────────
 with st.spinner("Načítám data..."):
     try:
         data = stahni_data(date_from, date_to)
@@ -241,6 +244,7 @@ svr_nazvy  = data["svr_nazvy"]
 cena_nazvy = data["cena_nazvy"]
 delty      = vypocti_delty(df_freq)
 
+# ── TŘI SLOUPCE ────────────────────────────────────
 col_freq, _g1, col_cena, _g2, col_svr = st.columns([3, 0.2, 3, 0.2, 3])
 
 with col_freq:
@@ -331,6 +335,7 @@ with col_svr:
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
+# ── GRAFY ──────────────────────────────────────────
 PLOT_BG  = "#0f1628"
 PAPER_BG = "#0a0e1a"
 GRID_COL = "#1e2d50"
@@ -390,6 +395,7 @@ if not df_cena.empty:
 
 st.caption("Data: ČEPS, a.s. – Oficiální SOAP API (cepsdata.asmx)")
 
+# ── AUTO-REFRESH ───────────────────────────────────
 if st.session_state.auto_refresh:
     time.sleep(1)
     st.session_state.countdown -= 1
