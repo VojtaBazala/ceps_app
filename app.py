@@ -269,10 +269,10 @@ with col_freq:
     if not df_freq.empty:
         last     = df_freq["value1"].iloc[-1]
         odchylka = abs(last - 50.0)
-        if odchylka < 0.02:
+        if odchylka <= 0.05:
             stav_cls, stav_txt = "freq-ok",   "NORMÁLNÍ"
-        elif odchylka < 0.1:
-            stav_cls, stav_txt = "freq-warn",  "ODCHYLKA"
+        elif odchylka <= 0.13:
+            stav_cls, stav_txt = "freq-warn",  "VÝRAZNÁ"
         else:
             stav_cls, stav_txt = "freq-crit",  "KRITICKÁ"
 
@@ -300,16 +300,15 @@ with col_freq:
         st.markdown(html_delty, unsafe_allow_html=True)
 
         # Min/max/průměr
-        st.markdown('<div class="section-label" style="margin-top:14px">Dnešní rozsah</div>', unsafe_allow_html=True)
-        rozsah_html = (
-            f'<div class="row-item"><span class="row-name">Min</span>'
-            f'<span class="row-value" style="color:#cdd8f0">{df_freq["value1"].min():.3f} Hz</span></div>'
-            f'<div class="row-item"><span class="row-name">Max</span>'
-            f'<span class="row-value" style="color:#cdd8f0">{df_freq["value1"].max():.3f} Hz</span></div>'
-            f'<div class="row-item"><span class="row-name">Průměr</span>'
-            f'<span class="row-value" style="color:#cdd8f0">{df_freq["value1"].mean():.3f} Hz</span></div>'
+        st.markdown(
+            f'<div class="section-label" style="margin-top:14px">Dnešní rozsah</div>'
+            f'<div style="font-family:\'Courier New\',monospace;font-size:0.75rem;color:#8899bb;padding:4px 0;">'
+            f'Min: <span style="color:#cdd8f0">{df_freq["value1"].min():.3f} Hz</span>'
+            f' &nbsp;|&nbsp; Max: <span style="color:#cdd8f0">{df_freq["value1"].max():.3f} Hz</span>'
+            f' &nbsp;|&nbsp; Ø: <span style="color:#cdd8f0">{df_freq["value1"].mean():.3f} Hz</span>'
+            f'</div>',
+            unsafe_allow_html=True
         )
-        st.markdown(rozsah_html, unsafe_allow_html=True)
     else:
         st.warning("Žádná data")
 
