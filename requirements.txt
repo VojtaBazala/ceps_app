@@ -1,4 +1,7 @@
 streamlit
+zeep
+lxml
 requests
 pandas
 plotly
+pytz
