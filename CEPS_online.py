@@ -20,7 +20,6 @@ if "dark_mode" not in st.session_state:
 
 if st.session_state.dark_mode:
     BG       = "#0a0e1a"
-    PANEL    = "#0f1628"
     BORDER   = "#1e2d50"
     TEXT     = "#cdd8f0"
     SUBTEXT  = "#8899bb"
@@ -28,10 +27,10 @@ if st.session_state.dark_mode:
     PAPER_BG = "#0a0e1a"
     GRID_COL = "#1e2d50"
     FONT_COL = "#cdd8f0"
-    BTN_TEMA = "☀️ Light"
+    LEG_COL  = "#cdd8f0"
+    BTN_TEMA = "☀️"
 else:
     BG       = "#f5f7fa"
-    PANEL    = "#ffffff"
     BORDER   = "#dde3ef"
     TEXT     = "#1a2035"
     SUBTEXT  = "#6677aa"
@@ -39,14 +38,15 @@ else:
     PAPER_BG = "#f5f7fa"
     GRID_COL = "#dde3ef"
     FONT_COL = "#1a2035"
-    BTN_TEMA = "🌙 Dark"
+    LEG_COL  = "#1a2035"
+    BTN_TEMA = "🌙"
 
 st.markdown(f"""
 <style>
   #MainMenu {{visibility: hidden;}}
   footer {{visibility: hidden;}}
   header {{visibility: hidden;}}
-  .block-container {{ padding-top: 1.5rem; padding-bottom: 1rem; background: {BG}; }}
+  .block-container {{ padding-top: 1.2rem; padding-bottom: 1rem; background: {BG}; }}
   .stApp {{ background: {BG}; }}
 
   .ceps-title {{
@@ -55,7 +55,7 @@ st.markdown(f"""
     letter-spacing: 4px; text-transform: uppercase; margin-bottom: 0.2rem;
   }}
   .status-bar {{
-    font-size: 0.8rem; color: {SUBTEXT}; margin-bottom: 1rem; font-family: monospace;
+    font-size: 0.8rem; color: {SUBTEXT}; margin-bottom: 0.8rem; font-family: monospace;
   }}
   .status-bar .ok   {{ color: #00e676; }}
   .status-bar .warn {{ color: #ffd740; }}
@@ -82,7 +82,7 @@ st.markdown(f"""
   }}
   .row-item:last-child {{ border-bottom: none; }}
   .row-name  {{ font-size: 0.7rem; color: {SUBTEXT}; letter-spacing: 1px; }}
-  .row-value {{ font-size: 0.95rem; font-weight: 700; color: {TEXT}; }}
+  .row-value {{ font-size: 0.95rem; font-weight: 700; }}
 
   .section-label {{
     font-size: 0.62rem; color: {SUBTEXT}; text-transform: uppercase;
@@ -97,6 +97,20 @@ st.markdown(f"""
   .freq-ok   {{ background: rgba(0,230,118,0.15); color: #00e676; }}
   .freq-warn {{ background: rgba(255,215,64,0.15); color: #ffd740; }}
   .freq-crit {{ background: rgba(255,61,87,0.15);  color: #ff3d57; }}
+
+  /* Subtilní tlačítka */
+  div[data-testid="stButton"] button {{
+    background: transparent !important;
+    border: 1px solid {BORDER} !important;
+    color: {SUBTEXT} !important;
+    font-size: 0.8rem !important;
+    padding: 4px 10px !important;
+    font-family: 'Courier New', monospace !important;
+  }}
+  div[data-testid="stButton"] button:hover {{
+    border-color: #00c8ff !important;
+    color: #00c8ff !important;
+  }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -175,11 +189,29 @@ date_from = min(pulnoc, osm_h)
 date_to   = now
 
 # ── HLAVIČKA ───────────────────────────────────────
-st.markdown('<div class="ceps-title">⚡ ČEPS online</div>', unsafe_allow_html=True)
+# Název + navigace vpravo nahoře
+header_l, header_r = st.columns([7, 3])
+with header_l:
+    st.markdown('<div class="ceps-title">⚡ ČEPS online</div>', unsafe_allow_html=True)
+with header_r:
+    # Roletka navigace + tlačítko tématu vpravo
+    nav_sp, nav_sel, nav_tema = st.columns([1, 3, 1])
+    with nav_sel:
+        nav = st.selectbox(
+            "", ["— Přejít na —", "📈 DAM Forecast"],
+            key="nav_ceps", label_visibility="collapsed"
+        )
+        if nav == "📈 DAM Forecast":
+            st.switch_page("pages/1_DAM_Forecast.py")
+    with nav_tema:
+        if st.button(BTN_TEMA, use_container_width=True):
+            st.session_state.dark_mode = not st.session_state.dark_mode
+            st.rerun()
 
-c1, c2, _sp, c3, c4 = st.columns([2, 2, 3, 2, 2])
+# Tlačítka refresh
+c1, c2, _sp = st.columns([2, 2, 6])
 with c1:
-    if st.button("🔄 Obnovit data", use_container_width=True):
+    if st.button("🔄 Obnovit", use_container_width=True):
         st.cache_data.clear()
         st.session_state.last_update = datetime.now(TZ)
         st.session_state.countdown   = st.session_state.refresh_interval
@@ -190,20 +222,14 @@ with c2:
             st.session_state.auto_refresh = False
             st.rerun()
     else:
-        if st.button("▶ Spustit auto (60s)", use_container_width=True):
+        if st.button("▶ Auto (60s)", use_container_width=True):
             st.session_state.auto_refresh = True
             st.session_state.countdown    = st.session_state.refresh_interval
             st.cache_data.clear()
             st.session_state.last_update  = datetime.now(TZ)
             st.rerun()
-with c3:
-    if st.button(BTN_TEMA, use_container_width=True):
-        st.session_state.dark_mode = not st.session_state.dark_mode
-        st.rerun()
-with c4:
-    if st.button("📈 DAM Forecast", use_container_width=True):
-        st.switch_page("pages/1_DAM_Forecast.py")
 
+# Stavový řádek
 if st.session_state.last_update:
     lu = st.session_state.last_update
     if lu.tzinfo is None:
@@ -216,21 +242,22 @@ else:
 if st.session_state.auto_refresh:
     status_html = (
         f'<div class="status-bar">'
-        f'Poslední aktualizace: <span class="ok">{last_str}</span> &nbsp;|&nbsp; '
-        f'Auto-refresh: <span class="ok">ZAP</span> &nbsp;|&nbsp; '
-        f'Příští refresh za: <span class="warn">{st.session_state.countdown} s</span>'
+        f'Aktualizace: <span class="ok">{last_str}</span> &nbsp;|&nbsp; '
+        f'Auto: <span class="ok">ZAP</span> &nbsp;|&nbsp; '
+        f'Za: <span class="warn">{st.session_state.countdown} s</span>'
         f'</div>'
     )
 else:
     status_html = (
         f'<div class="status-bar">'
-        f'Poslední aktualizace: <span class="ok">{last_str}</span> &nbsp;|&nbsp; '
-        f'Auto-refresh: <span style="color:#ff3d57">VYP</span>'
+        f'Aktualizace: <span class="ok">{last_str}</span> &nbsp;|&nbsp; '
+        f'Auto: <span style="color:#ff3d57">VYP</span>'
         f'</div>'
     )
 st.markdown(status_html, unsafe_allow_html=True)
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
+# ── DATA ───────────────────────────────────────────
 with st.spinner("Načítám data..."):
     try:
         data = stahni_data(date_from, date_to)
@@ -302,7 +329,7 @@ with col_cena:
         for vid, vname in cena_nazvy.items():
             if vid in df_cena.columns:
                 last  = df_cena[vid].iloc[-1]
-                color = barvy_c.get(vid, "#cdd8f0")
+                color = barvy_c.get(vid, TEXT)
                 html_cena += (
                     f'<div class="row-item">'
                     f'<span class="row-name">{vname}</span>'
@@ -323,7 +350,7 @@ with col_svr:
         for vid, vname in svr_nazvy.items():
             if vid in df_svr.columns:
                 last  = df_svr[vid].iloc[-1]
-                color = barvy.get(vid, "#cdd8f0")
+                color = barvy.get(vid, TEXT)
                 html_svr += (
                     f'<div class="row-item">'
                     f'<span class="row-name">{vname}</span>'
@@ -337,15 +364,19 @@ with col_svr:
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
+# ── GRAFY ──────────────────────────────────────────
 def base_layout(title, color="#00c8ff"):
     return dict(
         title=dict(text=title, font=dict(color=color, size=13, family="Courier New")),
         paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
-        font=dict(color=FONT_COL, family="Courier New", size=10),
+        font=dict(color=LEG_COL, family="Courier New", size=11),
         hovermode="x unified",
-        legend=dict(bgcolor=PLOT_BG, bordercolor=GRID_COL, font=dict(size=10)),
-        xaxis=dict(gridcolor=GRID_COL, showgrid=True),
-        yaxis=dict(gridcolor=GRID_COL, showgrid=True),
+        legend=dict(
+            bgcolor=PLOT_BG, bordercolor=BORDER,
+            font=dict(size=11, color=LEG_COL),
+        ),
+        xaxis=dict(gridcolor=GRID_COL, showgrid=True, color=LEG_COL),
+        yaxis=dict(gridcolor=GRID_COL, showgrid=True, color=LEG_COL),
         margin=dict(l=50, r=10, t=40, b=30),
         height=220,
     )
