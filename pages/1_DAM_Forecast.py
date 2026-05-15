@@ -30,51 +30,71 @@ st.set_page_config(
     layout="wide"
 )
 
-st.markdown("""
+# ── TÉMA ───────────────────────────────────────────
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = True
+
+if st.session_state.dark_mode:
+    BG       = "#0a0e1a"
+    PANEL    = "#0f1628"
+    BORDER   = "#1e2d50"
+    TEXT     = "#cdd8f0"
+    SUBTEXT  = "#8899bb"
+    PLOT_BG  = "#0f1628"
+    PAPER_BG = "#0a0e1a"
+    GRID_COL = "#1e2d50"
+    FONT_COL = "#cdd8f0"
+    BTN_TEMA = "☀️ Light"
+else:
+    BG       = "#f5f7fa"
+    PANEL    = "#ffffff"
+    BORDER   = "#dde3ef"
+    TEXT     = "#1a2035"
+    SUBTEXT  = "#6677aa"
+    PLOT_BG  = "#ffffff"
+    PAPER_BG = "#f5f7fa"
+    GRID_COL = "#dde3ef"
+    FONT_COL = "#1a2035"
+    BTN_TEMA = "🌙 Dark"
+
+st.markdown(f"""
 <style>
-  #MainMenu {visibility: hidden;}
-  footer {visibility: hidden;}
-  header {visibility: hidden;}
-  .block-container { padding-top: 1.5rem; }
+  #MainMenu {{visibility: hidden;}}
+  footer {{visibility: hidden;}}
+  header {{visibility: hidden;}}
+  .block-container {{ padding-top: 1.5rem; background: {BG}; }}
+  .stApp {{ background: {BG}; }}
 
-  .page-title {
-    font-family: 'Courier New', monospace;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #00e676;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 0.3rem;
-  }
-  .divider { border-top: 1px solid #1e2d50; margin: 0.8rem 0; }
+  .page-title {{
+    font-family: 'Courier New', monospace; font-size: 1.8rem;
+    font-weight: 700; color: #00e676; letter-spacing: 3px;
+    text-transform: uppercase; margin-bottom: 0.3rem;
+  }}
+  .divider {{ border-top: 1px solid {BORDER}; margin: 0.8rem 0; }}
 
-  .col-header {
-    font-family: 'Courier New', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    border-bottom: 2px solid;
-    padding-bottom: 6px;
-    margin-bottom: 12px;
-  }
-  .col-header.green { border-color: #00e676; color: #00e676; }
-  .col-header.blue  { border-color: #00c8ff; color: #00c8ff; }
+  .col-header {{
+    font-family: 'Courier New', monospace; font-size: 0.7rem;
+    letter-spacing: 3px; text-transform: uppercase;
+    border-bottom: 2px solid; padding-bottom: 6px; margin-bottom: 12px;
+  }}
+  .col-header.green {{ border-color: #00e676; color: #00e676; }}
+  .col-header.blue  {{ border-color: #00c8ff; color: #00c8ff; }}
 
-  .row-item {
+  .row-item {{
     display: flex; justify-content: space-between; align-items: center;
-    padding: 5px 0; border-bottom: 1px solid #1e2d50;
+    padding: 5px 0; border-bottom: 1px solid {BORDER};
     font-family: 'Courier New', monospace;
-  }
-  .row-item:last-child { border-bottom: none; }
-  .row-name  { font-size: 0.7rem; color: #8899bb; letter-spacing: 1px; }
-  .row-value { font-size: 0.95rem; font-weight: 700; }
+  }}
+  .row-item:last-child {{ border-bottom: none; }}
+  .row-name  {{ font-size: 0.7rem; color: {SUBTEXT}; letter-spacing: 1px; }}
+  .row-value {{ font-size: 0.95rem; font-weight: 700; color: {TEXT}; }}
 </style>
 """, unsafe_allow_html=True)
 
-PLOT_BG  = "#0f1628"
-PAPER_BG = "#0a0e1a"
-GRID_COL = "#1e2d50"
-FONT_COL = "#cdd8f0"
+PLOT_BG  = PLOT_BG
+PAPER_BG = PAPER_BG
+GRID_COL = GRID_COL
+FONT_COL = FONT_COL
 
 def base_layout(title, color="#00e676", height=280):
     return dict(
@@ -92,13 +112,16 @@ def base_layout(title, color="#00e676", height=280):
 # ── HLAVIČKA ───────────────────────────────────────
 st.markdown('<div class="page-title">📈 DAM Forecast</div>', unsafe_allow_html=True)
 
-# Tlačítko ČEPS online vpravo
-_sp, c_btn = st.columns([8, 2])
+_sp, c_tema, c_btn = st.columns([6, 2, 2])
+with c_tema:
+    if st.button(BTN_TEMA, use_container_width=True):
+        st.session_state.dark_mode = not st.session_state.dark_mode
+        st.rerun()
 with c_btn:
     if st.button("⚡ ČEPS online", use_container_width=True):
         st.switch_page("CEPS_online.py")
 
-st.caption("Automatická predikce hodinových cen na následující den; aktualizace přibližně v 7,00 D-1")
+st.caption("Predikce hodinových cen na následující den")
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 if not DB_OK:
@@ -117,17 +140,17 @@ except Exception as e:
     st.stop()
 
 if df_forecast.empty:
-    st.warning("⚠ Zatím nejsou k dispozici žádná data. Pipeline ještě nebyla spuštěna.")
+    st.warning("⚠ Zatím nejsou k dispozici žádná data.")
     st.stop()
 
-# ── DATUM FORECASTU ────────────────────────────────
+# ── DATUM ──────────────────────────────────────────
 forecast_date_str = pd.to_datetime(df_forecast["forecast_date"].iloc[0]).strftime("%d.%m.%Y")
 run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).strftime("%d.%m.%Y") if "run_date" in df_forecast.columns else "—"
 
 st.markdown(
-    f'<div style="font-family:\'Courier New\',monospace;font-size:0.8rem;color:#8899bb;">'
+    f'<div style="font-family:\'Courier New\',monospace;font-size:0.8rem;color:{SUBTEXT};">'
     f'Forecast pro: <span style="color:#00e676">{forecast_date_str}</span>'
-    f' &nbsp;|&nbsp; Vytvořeno: <span style="color:#8899bb">{run_date_str}</span>'
+    f' &nbsp;|&nbsp; Vytvořeno: <span style="color:{SUBTEXT}">{run_date_str}</span>'
     f'</div>',
     unsafe_allow_html=True
 )
@@ -168,68 +191,59 @@ with col2:
         if all(v is not None for v in [mae, rmse, median, smape]):
             st.markdown(
                 f'<div class="row-item"><span class="row-name">MAE</span>'
-                f'<span class="row-value" style="color:#cdd8f0">{mae:.2f} EUR/MWh</span></div>'
+                f'<span class="row-value" style="color:{TEXT}">{mae:.2f} EUR/MWh</span></div>'
                 f'<div class="row-item"><span class="row-name">RMSE</span>'
-                f'<span class="row-value" style="color:#cdd8f0">{rmse:.2f} EUR/MWh</span></div>'
+                f'<span class="row-value" style="color:{TEXT}">{rmse:.2f} EUR/MWh</span></div>'
                 f'<div class="row-item"><span class="row-name">Median AE</span>'
-                f'<span class="row-value" style="color:#cdd8f0">{median:.2f} EUR/MWh</span></div>'
+                f'<span class="row-value" style="color:{TEXT}">{median:.2f} EUR/MWh</span></div>'
                 f'<div class="row-item"><span class="row-name">SMAPE</span>'
                 f'<span class="row-value" style="color:#ffd740">{smape:.1f} %</span></div>'
                 f'<div class="row-item"><span class="row-name">Hodnoceno dní</span>'
-                f'<span class="row-value" style="color:#8899bb">{int(days)}</span></div>',
+                f'<span class="row-value" style="color:{SUBTEXT}">{int(days)}</span></div>',
                 unsafe_allow_html=True
             )
         else:
-            st.markdown('<div style="color:#8899bb;font-size:.8rem;">Zatím nedostatek dat</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="color:{SUBTEXT};font-size:.8rem;">Zatím nedostatek dat</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div style="color:#8899bb;font-size:.8rem;">Zatím nedostatek dat</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="color:{SUBTEXT};font-size:.8rem;">Zatím nedostatek dat</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ── GRAF: FORECAST ZÍTŘEK ──────────────────────────
+# ── GRAF: FORECAST ─────────────────────────────────
 fig = go.Figure()
 fig.add_trace(go.Bar(
-    x=df_forecast["hour"],
-    y=df_forecast["forecast_price"],
-    name="Forecast",
-    marker_color="#00e676",
+    x=df_forecast["hour"], y=df_forecast["forecast_price"],
+    name="Forecast", marker_color="#00e676",
     hovertemplate="Hodina %{x}:00<br><b>%{y:.2f} EUR/MWh</b>",
 ))
-
 if not df_prices.empty:
     fc_date = pd.to_datetime(df_forecast["forecast_date"].iloc[0]).date()
     actual  = df_prices[pd.to_datetime(df_prices["price_date"]).dt.date == fc_date]
     if not actual.empty:
         fig.add_trace(go.Scatter(
             x=actual["hour"], y=actual["price_eur"],
-            name="Skutečná cena",
-            line=dict(color="#ff3d57", width=2),
+            name="Skutečná cena", line=dict(color="#ff3d57", width=2),
             hovertemplate="Hodina %{x}:00<br><b>%{y:.2f} EUR/MWh</b>",
         ))
-
 fig.update_layout(**base_layout("Forecast cen – zítřek [EUR/MWh]", "#00e676"))
-fig.update_xaxes(
-    tickmode="linear", tick0=0, dtick=1,
-    ticktext=[f"{h:02d}:00" for h in range(24)],
-    tickvals=list(range(24))
-)
+fig.update_xaxes(tickmode="linear", tick0=0, dtick=1,
+    ticktext=[f"{h:02d}:00" for h in range(24)], tickvals=list(range(24)))
 st.plotly_chart(fig, use_container_width=True)
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ── GRAF: FORECAST TRACKING ────────────────────────
+# ── FORECAST TRACKING ──────────────────────────────
 st.markdown(
-    '<div style="font-family:\'Courier New\',monospace;font-size:0.7rem;'
-    'letter-spacing:3px;text-transform:uppercase;color:#00c8ff;'
-    'border-bottom:2px solid #00c8ff;padding-bottom:6px;margin-bottom:16px;">'
-    '📅 Forecast vs. Skutečnost – posledních 5 dní</div>',
+    f'<div style="font-family:\'Courier New\',monospace;font-size:0.7rem;'
+    f'letter-spacing:3px;text-transform:uppercase;color:#00c8ff;'
+    f'border-bottom:2px solid #00c8ff;padding-bottom:6px;margin-bottom:16px;">'
+    f'📅 Forecast vs. Skutečnost – posledních 5 dní</div>',
     unsafe_allow_html=True
 )
 
 if not df_hist.empty and not df_prices.empty:
     df_hist["forecast_date"] = pd.to_datetime(df_hist["forecast_date"]).dt.date
     df_prices["price_date"]  = pd.to_datetime(df_prices["price_date"]).dt.date
-
     forecast_dates = sorted(df_hist["forecast_date"].unique())
     price_dates    = set(df_prices["price_date"].unique())
     common_dates   = sorted([d for d in forecast_dates if d in price_dates], reverse=True)[:5]
@@ -241,70 +255,57 @@ if not df_hist.empty and not df_prices.empty:
             subplot_titles=[d.strftime("%d.%m.%Y") for d in common_dates],
             vertical_spacing=0.08,
         )
-
         for i, day in enumerate(common_dates, start=1):
             fc_day = df_hist[df_hist["forecast_date"] == day].sort_values("hour")
             ac_day = df_prices[df_prices["price_date"] == day].sort_values("hour")
-
             if not fc_day.empty:
                 fig2.add_trace(go.Scatter(
                     x=fc_day["hour"], y=fc_day["forecast_price"],
-                    name="Forecast",
-                    line=dict(color="#00e676", width=1.5),
+                    name="Forecast", line=dict(color="#00e676", width=1.5),
                     hovertemplate=f"{day.strftime('%d.%m')} %{{x}}:00<br>Forecast: <b>%{{y:.2f}} EUR</b>",
                     showlegend=(i == 1),
                 ), row=i, col=1)
-
             if not ac_day.empty:
                 fig2.add_trace(go.Scatter(
                     x=ac_day["hour"], y=ac_day["price_eur"],
-                    name="Skutečnost",
-                    line=dict(color="#ff3d57", width=1.5, dash="dot"),
+                    name="Skutečnost", line=dict(color="#ff3d57", width=1.5, dash="dot"),
                     hovertemplate=f"{day.strftime('%d.%m')} %{{x}}:00<br>Skutečnost: <b>%{{y:.2f}} EUR</b>",
                     showlegend=(i == 1),
                 ), row=i, col=1)
-
             if not fc_day.empty and not ac_day.empty:
                 merged = fc_day.merge(ac_day, on="hour", how="inner")
                 if not merged.empty:
                     mae_day = (merged["forecast_price"] - merged["price_eur"]).abs().mean()
                     fig2.add_annotation(
                         text=f"MAE: {mae_day:.1f} EUR/MWh",
-                        xref=f"x{i}", yref=f"y{i}",
-                        x=23,
+                        xref=f"x{i}", yref=f"y{i}", x=23,
                         y=merged[["forecast_price", "price_eur"]].max().max(),
                         showarrow=False,
                         font=dict(size=9, color="#ffd740", family="Courier New"),
                         xanchor="right",
                     )
-
         fig2.update_layout(
             paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
             font=dict(color=FONT_COL, family="Courier New", size=10),
-            hovermode="x unified",
-            height=180 * n,
+            hovermode="x unified", height=180 * n,
             margin=dict(l=50, r=10, t=30, b=20),
             legend=dict(bgcolor=PLOT_BG, bordercolor=GRID_COL, orientation="h", y=1.02, x=0),
         )
         for i in range(1, n + 1):
             fig2.update_xaxes(gridcolor=GRID_COL, showgrid=True, tickmode="linear", tick0=0, dtick=2, row=i, col=1)
             fig2.update_yaxes(gridcolor=GRID_COL, showgrid=True, row=i, col=1)
-            fig2.layout.annotations[i-1].font.color = "#8899bb"
+            fig2.layout.annotations[i-1].font.color = SUBTEXT
             fig2.layout.annotations[i-1].font.size  = 11
-
         st.plotly_chart(fig2, use_container_width=True)
     else:
-        st.info("Zatím nejsou dostupná data pro porovnání forecast vs. skutečnost.")
+        st.info("Zatím nejsou dostupná data pro porovnání.")
 else:
     st.info("Zatím nejsou dostupná data pro forecast tracking.")
 
 with st.expander("📋 Hodinový forecast – detail"):
     df_show = df_forecast.copy()
     df_show["hodina"] = df_show["hour"].apply(lambda h: f"{int(h):02d}:00")
-    df_show = df_show.rename(columns={
-        "forecast_price": "Forecast [EUR/MWh]",
-        "model_used":     "Model",
-    })[["hodina", "Forecast [EUR/MWh]", "Model"]]
+    df_show = df_show.rename(columns={"forecast_price": "Forecast [EUR/MWh]", "model_used": "Model"})[["hodina", "Forecast [EUR/MWh]", "Model"]]
     st.dataframe(df_show, use_container_width=True, hide_index=True)
 
 with st.expander("📋 Hodnocení přesnosti – posledních 30 dní"):
