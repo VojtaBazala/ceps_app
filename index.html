@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ČEPS Dispečink – živá data</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg:       #0a0e1a;
+    --panel:    #0f1628;
+    --border:   #1e2d50;
+    --accent:   #00c8ff;
+    --green:    #00e676;
+    --red:      #ff3d57;
+    --yellow:   #ffd740;
+    --gray:     #8899bb;
+    --text:     #cdd8f0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  header h1 {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.1rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  #clock {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.3rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  #status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--gray);
+    display: inline-block;
+    margin-right: 8px;
+    transition: background .3s;
+  }
+  #status-dot.ok   { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  #status-dot.err  { background: var(--red);   box-shadow: 0 0 8px var(--red); }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .controls label { font-size: .8rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; }
+  .controls select, .controls button {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-family: 'Barlow', sans-serif;
+    font-size: .9rem;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+  }
+  .controls select:hover, .controls button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .controls button.primary {
+    background: var(--accent);
+    color: #000;
+    font-weight: 600;
+    border-color: var(--accent);
+  }
+  .controls button.primary:hover { background: #00a8d8; }
+  #auto-label { font-size: .8rem; color: var(--gray); }
+  #auto-label span { color: var(--accent); }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 20px;
+    padding: 24px 32px;
+  }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .panel.freq::before  { background: var(--accent); }
+  .panel.svr::before   { background: var(--yellow); }
+  .panel.cena::before  { background: var(--green); }
+
+  .panel-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-bottom: 4px;
+  }
+  .panel-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 2.4rem;
+    font-weight: 400;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .panel.freq  .panel-value { color: var(--accent); }
+  .panel.cena  .panel-value { color: var(--green); }
+
+  .panel-value .unit {
+    font-size: 1rem;
+    color: var(--gray);
+    margin-left: 6px;
+  }
+  .delta {
+    font-size: .8rem;
+    padding: 2px 8px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .delta.up   { background: rgba(0,230,118,.15); color: var(--green); }
+  .delta.down { background: rgba(255,61,87,.15);  color: var(--red); }
+  .delta.flat { background: rgba(136,153,187,.1); color: var(--gray); }
+
+  canvas { max-height: 220px; }
+
+  /* ── SVR METRICS ── */
+  .svr-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .svr-m {
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+    text-align: center;
+  }
+  .svr-m .label { font-size: .65rem; color: var(--gray); letter-spacing: 1px; margin-bottom: 4px; }
+  .svr-m .val   { font-family: 'Share Tech Mono', monospace; font-size: 1rem; }
+  .svr-m.afrr-p .val { color: #bf2837; }
+  .svr-m.afrr-n .val { color: #b1b2b7; }
+  .svr-m.mfrr-p .val { color: #fdc82f; }
+  .svr-m.mfrr-n .val { color: #13b8f0; }
+
+  /* ── CENA TABLE ── */
+  .cena-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .82rem;
+    margin-top: 4px;
+  }
+  .cena-table th {
+    text-align: left;
+    padding: 6px 10px;
+    color: var(--gray);
+    font-size: .7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .cena-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid rgba(30,45,80,.5);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .82rem;
+  }
+  .cena-table tr:hover td { background: rgba(255,255,255,.02); }
+  .pos { color: var(--red); }
+  .neg { color: #13b8f0; }
+
+  /* ── LOADING ── */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    color: var(--gray);
+    font-size: .85rem;
+    gap: 10px;
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg { color: var(--red); font-size: .82rem; padding: 12px 0; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 16px;
+    color: var(--gray);
+    font-size: .75rem;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span id="status-dot"></span>ČEPS &mdash; Dispečink live</h1>
+  <div id="clock">--:--:--</div>
+</header>
+
+<div class="controls">
+  <label>Datum:</label>
+  <input type="date" id="date-picker"
+    style="background:var(--panel);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:4px;font-family:Barlow,sans-serif;font-size:.9rem;">
+  <button class="primary" onclick="nactiVse()">▶ Načíst data</button>
+  <button onclick="toggleAuto()" id="auto-btn">⟳ Auto-refresh: OFF</button>
+  <span id="auto-label"></span>
+</div>
+
+<div class="grid">
+
+  <!-- FREKVENCE -->
+  <div class="panel freq">
+    <div class="panel-title">Frekvence sítě</div>
+    <div class="panel-value" id="freq-val">—<span class="unit">Hz</span></div>
+    <div id="freq-chart-wrap">
+      <div class="loading"><div class="spinner"></div> Načítám...</div>
+    </div>
+  </div>
+
+  <!-- AKTIVACE SVR -->
+  <div class="panel svr">
+    <div class="panel-title">Aktivace SVR v ČR</div>
+    <div class="svr-metrics">
+      <div class="svr-m afrr-p"><div class="label">aFRR+</div><div class="val" id="svr-afrr-p">—</div></div>
+      <div class="svr-m afrr-n"><div class="label">aFRR−</div><div class="val" id="svr-afrr-n">—</div></div>
+      <div class="svr-m mfrr-p"><div class="label">mFRR+</div><div class="val" id="svr-mfrr-p">—</div></div>
+      <div class="svr-m mfrr-n"><div class="label">mFRR−</div><div class="val" id="svr-mfrr-n">—</div></div>
+    </div>
+    <div id="svr-chart-wrap">
+      <div class="loading"><div class="spinner"></div> Načítám...</div>
+    </div>
+  </div>
+
+  <!-- CENA RE -->
+  <div class="panel cena" style="grid-column: 1 / -1;">
+    <div class="panel-title">Aktuální cena RE</div>
+    <div id="cena-content">
+      <div class="loading"><div class="spinner"></div> Načítám...</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Data: <a href="https://www.ceps.cz/cs/dispecerske-rizeni" target="_blank">ČEPS, a.s.</a> &mdash;
+  Stránka volá ČEPS API přímo z vašeho prohlížeče &mdash;
+  Poslední aktualizace: <span id="last-update">—</span>
+</footer>
+
+<script>
+// ════════════════════════════════════════════
+// KONFIGURACE
+// ════════════════════════════════════════════
+const BASE = 'https://www.ceps.cz/cs/data';
+const GRAPH_ID = 1040;
+
+// ════════════════════════════════════════════
+// STAV
+// ════════════════════════════════════════════
+let autoInterval = null;
+let chartFreq = null;
+let chartSvr  = null;
+
+// ════════════════════════════════════════════
+// HODINY
+// ════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('cs-CZ', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Výchozí datum = dnes
+const dp = document.getElementById('date-picker');
+dp.value = new Date().toISOString().slice(0,10);
+
+// ════════════════════════════════════════════
+// FETCH HELPER
+// ════════════════════════════════════════════
+async function fetchCeps(method) {
+  const dateStr = document.getElementById('date-picker').value; // YYYY-MM-DD
+  const [y, m, d] = dateStr.split('-');
+  const url = `${BASE}?do=loadGraphData&method=${encodeURIComponent(method)}&graph_id=${GRAPH_ID}&download=false`;
+  const resp = await fetch(url, {
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'Accept': 'application/json, text/javascript, */*; q=0.01',
+      'Referer': 'https://www.ceps.cz/cs/dispecerske-rizeni',
+    }
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const outer = await resp.json();
+  const inner = JSON.parse(outer.result);
+  return inner.chart.series;
+}
+
+// ════════════════════════════════════════════
+// PARSOVÁNÍ DAT
+// ════════════════════════════════════════════
+function seriesToChartData(series) {
+  // Vezmi labely z první série
+  const labels = series[0].data.map(p => p.x.slice(11,16)); // HH:MM
+  const datasets = series.map(s => ({
+    label:           s.name,
+    data:            s.data.map(p => parseFloat(p.value)),
+    backgroundColor: s.fill + (s.fill.length === 7 ? 'aa' : ''),
+    borderColor:     s.fill,
+    borderWidth:     1,
+  }));
+  return { labels, datasets };
+}
+
+// Poslední nenulová hodnota
+function lastNonZero(data) {
+  for (let i = data.length - 1; i >= 0; i--) {
+    const v = parseFloat(data[i].value);
+    if (v !== 0) return v;
+  }
+  return parseFloat(data[data.length-1]?.value ?? 0);
+}
+
+// ════════════════════════════════════════════
+// FREKVENCE
+// ════════════════════════════════════════════
+async function nactiFrekvenci() {
+  const wrap = document.getElementById('freq-chart-wrap');
+  try {
+    const series = await fetchCeps('Frekvence');
+    const s = series[0];
+    const vals = s.data.map(p => parseFloat(p.value)).filter(v => v > 0);
+    const last = vals[vals.length - 1] ?? 50;
+    const prev = vals[vals.length - 2] ?? last;
+
+    // Velká hodnota
+    const diff = last - prev;
+    const deltaClass = diff > 0.001 ? 'up' : diff < -0.001 ? 'down' : 'flat';
+    const deltaSign  = diff > 0 ? '+' : '';
+    document.getElementById('freq-val').innerHTML =
+      `${last.toFixed(3)}<span class="unit">Hz</span>
+       <span class="delta ${deltaClass}">${deltaSign}${diff.toFixed(3)}</span>`;
+
+    // Graf – zobraz jen hodnoty > 0 a za posledních ~6h
+    const filtered = s.data.filter(p => parseFloat(p.value) > 0);
+    const show = filtered.slice(-360);
+    const labels   = show.map(p => p.x.slice(11,16));
+    const data     = show.map(p => parseFloat(p.value));
+
+    // Barvy: zelená/červená dle odchylky od 50 Hz
+    const pointColors = data.map(v =>
+      v >= 49.98 && v <= 50.02 ? '#00e676' :
+      v >= 49.9  && v <= 50.1  ? '#ffd740' : '#ff3d57'
+    );
+
+    wrap.innerHTML = '<canvas id="chart-freq"></canvas>';
+    if (chartFreq) chartFreq.destroy();
+    chartFreq = new Chart(document.getElementById('chart-freq'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          borderColor: '#00c8ff',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.3,
+          fill: { target: 'origin',
+            above: 'rgba(0,200,255,0.05)',
+            below: 'rgba(255,61,87,0.05)' }
+        }, {
+          data: data.map(() => 50),
+          borderColor: 'rgba(255,255,255,0.15)',
+          borderWidth: 1,
+          borderDash: [4,4],
+          pointRadius: 0,
+        }]
+      },
+      options: chartOpts('Hz', 2),
+    });
+  } catch(e) {
+    wrap.innerHTML = `<div class="error-msg">⚠ Chyba: ${e.message}</div>`;
+  }
+}
+
+// ════════════════════════════════════════════
+// AKTIVACE SVR
+// ════════════════════════════════════════════
+async function nactiSVR() {
+  const wrap = document.getElementById('svr-chart-wrap');
+  try {
+    const series = await fetchCeps('AktivaceSVRvCR');
+
+    // Metriky – poslední nenulová hodnota každé série
+    const ids = ['svr-afrr-p','svr-afrr-n','svr-mfrr-p','svr-mfrr-n'];
+    const names = ['aFRR+','aFRR-','mFRR+','mFRR-'];
+    series.slice(0,4).forEach((s, i) => {
+      const v = lastNonZero(s.data);
+      document.getElementById(ids[i]).textContent =
+        (v === 0 ? '0' : (v > 0 ? '+' : '') + v.toFixed(1)) + ' MW';
+    });
+
+    // Graf – posledních 6 hodin
+    const show = series.map(s => ({ ...s, data: s.data.slice(-360) }));
+    const labels = show[0].data.map(p => p.x.slice(11,16));
+    const datasets = show.map(s => ({
+      label: s.name,
+      data: s.data.map(p => parseFloat(p.value)),
+      backgroundColor: s.fill + '99',
+      borderColor: s.fill,
+      borderWidth: 1,
+    }));
+
+    wrap.innerHTML = '<canvas id="chart-svr"></canvas>';
+    if (chartSvr) chartSvr.destroy();
+    chartSvr = new Chart(document.getElementById('chart-svr'), {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        ...chartOpts('MW', 0),
+        scales: {
+          x: { stacked: true, ...xAxis() },
+          y: { stacked: true, ...yAxis('MW') },
+        }
+      }
+    });
+  } catch(e) {
+    wrap.innerHTML = `<div class="error-msg">⚠ Chyba: ${e.message}</div>`;
+  }
+}
+
+// ════════════════════════════════════════════
+// CENA RE
+// ════════════════════════════════════════════
+async function nactiCenuRE() {
+  const wrap = document.getElementById('cena-content');
+  try {
+    const series = await fetchCeps('AktuálníCenaRE');
+
+    // Sestavíme tabulku z posledních hodnot
+    let html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">`;
+
+    series.forEach(s => {
+      // Poslední data s nenulovými hodnotami
+      const nonzero = s.data.filter(p => parseFloat(p.value) !== 0).slice(-20);
+      if (!nonzero.length) return;
+
+      const isPositive = s.name.includes('+') || s.name.toLowerCase().includes('pos');
+      const color = isPositive ? 'var(--red)' : '#13b8f0';
+      const last = parseFloat(nonzero[nonzero.length-1].value);
+
+      html += `
+        <div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:2px;
+                      color:var(--gray);text-transform:uppercase;margin-bottom:8px;">${s.name}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:2rem;color:${color};
+                      margin-bottom:12px;">${last.toLocaleString('cs-CZ')} <span style="font-size:.9rem;color:var(--gray)">CZK/MWh</span></div>
+          <table class="cena-table">
+            <tr><th>Čas</th><th>Cena (CZK/MWh)</th></tr>
+            ${nonzero.slice(-10).reverse().map(p => {
+              const v = parseFloat(p.value);
+              const cls = v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+              return `<tr><td>${p.x.slice(11,16)}</td>
+                          <td class="${cls}">${v.toLocaleString('cs-CZ', {minimumFractionDigits:2})}</td></tr>`;
+            }).join('')}
+          </table>
+        </div>`;
+    });
+
+    html += `</div>`;
+    wrap.innerHTML = html || '<div class="error-msg">Žádná data k dispozici</div>';
+
+  } catch(e) {
+    wrap.innerHTML = `<div class="error-msg">⚠ Chyba: ${e.message}
+      <br><small>Poznámka: Cena RE nemusí být dostupná pro aktuální den před uzavřením trhu.</small></div>`;
+  }
+}
+
+// ════════════════════════════════════════════
+// CHART.JS HELPERS
+// ════════════════════════════════════════════
+function xAxis() {
+  return {
+    ticks: {
+      color: '#8899bb',
+      maxTicksLimit: 12,
+      font: { family: 'Share Tech Mono', size: 10 }
+    },
+    grid: { color: 'rgba(30,45,80,0.5)' }
+  };
+}
+function yAxis(unit) {
+  return {
+    ticks: {
+      color: '#8899bb',
+      font: { family: 'Share Tech Mono', size: 10 },
+      callback: v => v + ' ' + unit
+    },
+    grid: { color: 'rgba(30,45,80,0.5)' }
+  };
+}
+function chartOpts(unit, decimals) {
+  return {
+    responsive: true,
+    animation: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        labels: { color: '#8899bb', font: { size: 11 } }
+      },
+      tooltip: {
+        backgroundColor: '#0f1628',
+        borderColor: '#1e2d50',
+        borderWidth: 1,
+        titleColor: '#00c8ff',
+        bodyColor: '#cdd8f0',
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(decimals)} ${unit}`
+        }
+      }
+    },
+    scales: {
+      x: xAxis(),
+      y: yAxis(unit),
+    }
+  };
+}
+
+// ════════════════════════════════════════════
+// NAČÍST VŠE
+// ════════════════════════════════════════════
+function setLoading() {
+  ['freq-chart-wrap','svr-chart-wrap'].forEach(id => {
+    document.getElementById(id).innerHTML =
+      '<div class="loading"><div class="spinner"></div> Načítám...</div>';
+  });
+  document.getElementById('cena-content').innerHTML =
+    '<div class="loading"><div class="spinner"></div> Načítám...</div>';
+}
+
+async function nactiVse() {
+  setLoading();
+  document.getElementById('status-dot').className = '';
+  try {
+    await Promise.all([nactiFrekvenci(), nactiSVR(), nactiCenuRE()]);
+    document.getElementById('status-dot').className = 'ok';
+    document.getElementById('last-update').textContent =
+      new Date().toLocaleTimeString('cs-CZ');
+  } catch(e) {
+    document.getElementById('status-dot').className = 'err';
+  }
+}
+
+// ════════════════════════════════════════════
+// AUTO-REFRESH
+// ════════════════════════════════════════════
+let autoOn = false;
+let countdown = 0;
+
+function toggleAuto() {
+  autoOn = !autoOn;
+  const btn = document.getElementById('auto-btn');
+  const lbl = document.getElementById('auto-label');
+  if (autoOn) {
+    btn.textContent = '⟳ Auto-refresh: ON';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+    countdown = 60;
+    autoInterval = setInterval(() => {
+      countdown--;
+      lbl.innerHTML = `Příští refresh za <span>${countdown}s</span>`;
+      if (countdown <= 0) { countdown = 60; nactiVse(); }
+    }, 1000);
+  } else {
+    btn.textContent = '⟳ Auto-refresh: OFF';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    lbl.innerHTML = '';
+    clearInterval(autoInterval);
+  }
+}
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+nactiVse();
+</script>
+</body>
+</html>
