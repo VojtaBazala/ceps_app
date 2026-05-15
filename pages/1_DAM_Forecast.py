@@ -24,7 +24,6 @@ except Exception as e:
     DB_OK = False
     DB_ERROR = str(e)
 
-# ── STYL ───────────────────────────────────────────
 st.set_page_config(
     page_title="DAM Forecast",
     page_icon="📈",
@@ -92,6 +91,12 @@ def base_layout(title, color="#00e676", height=280):
 
 # ── HLAVIČKA ───────────────────────────────────────
 st.markdown('<div class="page-title">📈 DAM Forecast</div>', unsafe_allow_html=True)
+
+c1, c2 = st.columns([2, 8])
+with c1:
+    if st.button("⚡ ČEPS online", use_container_width=True):
+        st.switch_page("CEPS_online.py")
+
 st.caption("Predikce hodinových cen na následující den")
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
@@ -125,7 +130,6 @@ st.markdown(
     f'</div>',
     unsafe_allow_html=True
 )
-
 st.markdown('<div style="margin-bottom:12px"></div>', unsafe_allow_html=True)
 
 # ── DVA SLOUPCE ────────────────────────────────────
@@ -293,7 +297,6 @@ if not df_hist.empty and not df_prices.empty:
 else:
     st.info("Zatím nejsou dostupná data pro forecast tracking.")
 
-# ── TABULKY ────────────────────────────────────────
 with st.expander("📋 Hodinový forecast – detail"):
     df_show = df_forecast.copy()
     df_show["hodina"] = df_show["hour"].apply(lambda h: f"{int(h):02d}:00")
