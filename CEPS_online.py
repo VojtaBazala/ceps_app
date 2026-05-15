@@ -8,7 +8,6 @@ import plotly.graph_objects as go
 import time
 import pytz
 
-# ── KONFIGURACE ────────────────────────────────────
 st.set_page_config(
     page_title="ČEPS online",
     page_icon="⚡",
@@ -42,11 +41,7 @@ st.markdown("""
 
   .divider { border-top: 1px solid #1e2d50; margin: 0.8rem 0; }
 
-  /* Sloupec box */
-  .col-box {
-    padding: 0 10px;
-    height: 100%;
-  }
+  .col-box { padding: 0 10px; height: 100%; }
 
   .col-header {
     font-family: 'Courier New', monospace;
@@ -61,7 +56,6 @@ st.markdown("""
   .col-header.cena { border-color: #00e676; color: #00e676; }
   .col-header.svr  { border-color: #ffd740; color: #ffd740; }
 
-  /* Velká hodnota frekvence */
   .val-big {
     font-family: 'Courier New', monospace;
     font-size: 2rem;
@@ -71,7 +65,6 @@ st.markdown("""
     margin-bottom: 4px;
   }
 
-  /* Řádek: název vlevo, hodnota vpravo */
   .row-item {
     display: flex;
     justify-content: space-between;
@@ -84,7 +77,6 @@ st.markdown("""
   .row-name  { font-size: 0.7rem; color: #8899bb; letter-spacing: 1px; }
   .row-value { font-size: 0.95rem; font-weight: 700; }
 
-  /* Sekce label */
   .section-label {
     font-size: 0.62rem;
     color: #8899bb;
@@ -95,7 +87,6 @@ st.markdown("""
     font-family: 'Courier New', monospace;
   }
 
-  /* Status badge frekvence */
   .freq-status {
     display: inline-block; padding: 2px 10px; border-radius: 3px;
     font-size: 0.7rem; font-family: 'Courier New', monospace;
@@ -111,19 +102,16 @@ WSDL = "https://vip-prod-service-00-azapp.azurewebsites.net/_layouts/cepsdata.as
 NS   = "https://www.ceps.cz/CepsData/StructuredData/1.0"
 TZ   = pytz.timezone("Europe/Prague")
 
-# ── SESSION STATE ──────────────────────────────────
 if "auto_refresh"     not in st.session_state: st.session_state.auto_refresh     = False
 if "countdown"        not in st.session_state: st.session_state.countdown        = 60
 if "last_update"      not in st.session_state: st.session_state.last_update      = None
 if "refresh_interval" not in st.session_state: st.session_state.refresh_interval = 60
 
-# ── SOAP KLIENT ────────────────────────────────────
 @st.cache_resource
 def get_client():
     session = requests.Session()
     return Client(WSDL, transport=Transport(session=session))
 
-# ── PARSOVÁNÍ ──────────────────────────────────────
 def xml_na_df(result):
     items = result.findall(f"{{{NS}}}data/{{{NS}}}item")
     if not items:
@@ -147,7 +135,6 @@ def nazvy_serii(result):
     if not els: els = result.findall("series/serie")
     return {s.get("id"): s.get("name") for s in els}
 
-# ── VÝPOČET DELT ───────────────────────────────────
 def vypocti_delty(df: pd.DataFrame) -> dict:
     if df.empty or "value1" not in df.columns:
         return {"1 hod.": None, "2 hod.": None, "4 hod.": None, "8 hod.": None}
@@ -164,7 +151,6 @@ def vypocti_delty(df: pd.DataFrame) -> dict:
             delty[label] = None
     return delty
 
-# ── STAŽENÍ DAT ────────────────────────────────────
 @st.cache_data(ttl=55)
 def stahni_data(date_from, date_to):
     client = get_client()
@@ -179,10 +165,8 @@ def stahni_data(date_from, date_to):
         "cena_nazvy": nazvy_serii(r_cena),
     }
 
-# ── DATOVÝ ROZSAH ──────────────────────────────────
-# Datový rozsah v lokálním čase CET/CEST (ČEPS API vyžaduje lokální čas)
 now_local = datetime.now(TZ)
-now       = now_local.replace(tzinfo=None)  # naive datetime pro SOAP API
+now       = now_local.replace(tzinfo=None)
 pulnoc    = now.replace(hour=0, minute=0, second=0, microsecond=0)
 osm_h     = now - timedelta(hours=8)
 date_from = min(pulnoc, osm_h)
@@ -191,7 +175,7 @@ date_to   = now
 # ── HLAVIČKA ───────────────────────────────────────
 st.markdown('<div class="ceps-title">⚡ ČEPS online</div>', unsafe_allow_html=True)
 
-c1, c2, c3, c4 = st.columns([2, 2, 2, 6])
+c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 2])
 with c1:
     if st.button("🔄 Obnovit data", use_container_width=True):
         st.cache_data.clear()
@@ -210,8 +194,10 @@ with c2:
             st.cache_data.clear()
             st.session_state.last_update  = datetime.now(TZ)
             st.rerun()
+with c3:
+    if st.button("📈 DAM Forecast", use_container_width=True):
+        st.switch_page("pages/1_DAM_Forecast.py")
 
-# Poslední aktualizace v SEČ/SELČ
 if st.session_state.last_update:
     lu = st.session_state.last_update
     if lu.tzinfo is None:
@@ -239,7 +225,6 @@ else:
 st.markdown(status_html, unsafe_allow_html=True)
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ── DATA ───────────────────────────────────────────
 with st.spinner("Načítám data..."):
     try:
         data = stahni_data(date_from, date_to)
@@ -256,33 +241,25 @@ svr_nazvy  = data["svr_nazvy"]
 cena_nazvy = data["cena_nazvy"]
 delty      = vypocti_delty(df_freq)
 
-# ── TŘI SLOUPCE s mezerami ─────────────────────────
-# Mezery jako prázdné sloupce (0.15 šířky)
 col_freq, _g1, col_cena, _g2, col_svr = st.columns([3, 0.2, 3, 0.2, 3])
 
-# ── FREKVENCE ──────────────────────────────────────
 with col_freq:
     st.markdown('<div class="col-box">', unsafe_allow_html=True)
     st.markdown('<div class="col-header freq">📡 Frekvence sítě</div>', unsafe_allow_html=True)
-
     if not df_freq.empty:
         last     = df_freq["value1"].iloc[-1]
         odchylka = abs(last - 50.0)
         if odchylka <= 0.05:
-            stav_cls, stav_txt = "freq-ok",   "NORMÁLNÍ"
+            stav_cls, stav_txt = "freq-ok",  "NORMÁLNÍ"
         elif odchylka <= 0.13:
-            stav_cls, stav_txt = "freq-warn",  "VÝRAZNÁ"
+            stav_cls, stav_txt = "freq-warn", "VÝRAZNÁ"
         else:
-            stav_cls, stav_txt = "freq-crit",  "KRITICKÁ"
+            stav_cls, stav_txt = "freq-crit", "KRITICKÁ"
 
         st.markdown(f'<div class="val-big">{last:.3f} Hz</div>', unsafe_allow_html=True)
         st.markdown(f'<span class="freq-status {stav_cls}">{stav_txt}</span>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">Změna kapacity 1 MW BESS za</div>', unsafe_allow_html=True)
 
-        # Delty – název vlevo, hodnota vpravo
-        st.markdown(
-            '<div class="section-label">Změna kapacity 1 MW BESS za</div>',
-            unsafe_allow_html=True
-        )
         html_delty = ""
         for label, val in delty.items():
             if val is None:
@@ -297,8 +274,6 @@ with col_freq:
                 f'</div>'
             )
         st.markdown(html_delty, unsafe_allow_html=True)
-
-        # Min/max/průměr
         st.markdown(
             f'<div class="section-label" style="margin-top:14px">Dnešní rozsah</div>'
             f'<div style="font-family:\'Courier New\',monospace;font-size:0.75rem;color:#8899bb;padding:4px 0;">'
@@ -310,17 +285,13 @@ with col_freq:
         )
     else:
         st.warning("Žádná data")
-
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ── CENA RE ────────────────────────────────────────
 with col_cena:
     st.markdown('<div class="col-box">', unsafe_allow_html=True)
     st.markdown('<div class="col-header cena">💶 Aktuální cena RE</div>', unsafe_allow_html=True)
-
     if not df_cena.empty:
-        barvy_c = {"value1":"#00e676","value2":"#ffd740",
-                   "value3":"#13b8f0","value4":"#4baf4f"}
+        barvy_c = {"value1":"#00e676","value2":"#ffd740","value3":"#13b8f0","value4":"#4baf4f"}
         html_cena = ""
         for vid, vname in cena_nazvy.items():
             if vid in df_cena.columns:
@@ -335,17 +306,13 @@ with col_cena:
         st.markdown(html_cena, unsafe_allow_html=True)
     else:
         st.warning("Žádná data")
-
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ── AKTIVACE SVR ───────────────────────────────────
 with col_svr:
     st.markdown('<div class="col-box">', unsafe_allow_html=True)
     st.markdown('<div class="col-header svr">📊 Aktivace SVR v ČR</div>', unsafe_allow_html=True)
-
     if not df_svr.empty:
-        barvy = {"value1":"#bf2837","value2":"#b1b2b7",
-                 "value3":"#fdc82f","value4":"#13b8f0","value7":"#4baf4f"}
+        barvy = {"value1":"#bf2837","value2":"#b1b2b7","value3":"#fdc82f","value4":"#13b8f0","value7":"#4baf4f"}
         html_svr = ""
         for vid, vname in svr_nazvy.items():
             if vid in df_svr.columns:
@@ -360,12 +327,10 @@ with col_svr:
         st.markdown(html_svr, unsafe_allow_html=True)
     else:
         st.warning("Žádná data")
-
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ── GRAFY ──────────────────────────────────────────
 PLOT_BG  = "#0f1628"
 PAPER_BG = "#0a0e1a"
 GRID_COL = "#1e2d50"
@@ -397,8 +362,7 @@ if not df_freq.empty:
     st.plotly_chart(fig, use_container_width=True)
 
 if not df_svr.empty:
-    barvy = {"value1":"#bf2837","value2":"#b1b2b7",
-             "value3":"#fdc82f","value4":"#13b8f0","value7":"#4baf4f"}
+    barvy = {"value1":"#bf2837","value2":"#b1b2b7","value3":"#fdc82f","value4":"#13b8f0","value7":"#4baf4f"}
     fig2 = go.Figure()
     for vid, vname in svr_nazvy.items():
         if vid in df_svr.columns:
@@ -412,8 +376,7 @@ if not df_svr.empty:
     st.plotly_chart(fig2, use_container_width=True)
 
 if not df_cena.empty:
-    barvy_c = {"value1":"#00e676","value2":"#ffd740",
-               "value3":"#13b8f0","value4":"#4baf4f"}
+    barvy_c = {"value1":"#00e676","value2":"#ffd740","value3":"#13b8f0","value4":"#4baf4f"}
     fig3 = go.Figure()
     for vid, vname in cena_nazvy.items():
         if vid in df_cena.columns:
@@ -427,7 +390,6 @@ if not df_cena.empty:
 
 st.caption("Data: ČEPS, a.s. – Oficiální SOAP API (cepsdata.asmx)")
 
-# ── AUTO-REFRESH ───────────────────────────────────
 if st.session_state.auto_refresh:
     time.sleep(1)
     st.session_state.countdown -= 1
