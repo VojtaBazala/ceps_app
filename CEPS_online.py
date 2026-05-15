@@ -175,7 +175,7 @@ date_to   = now
 # ── HLAVIČKA ───────────────────────────────────────
 st.markdown('<div class="ceps-title">⚡ ČEPS online</div>', unsafe_allow_html=True)
 
-c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 2])
+c1, c2, _sp, c3 = st.columns([2, 2, 5, 2])
 with c1:
     if st.button("🔄 Obnovit data", use_container_width=True):
         st.cache_data.clear()
