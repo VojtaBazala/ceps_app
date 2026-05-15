@@ -121,7 +121,13 @@ with c_btn:
     if st.button("⚡ ČEPS online", use_container_width=True):
         st.switch_page("CEPS_online.py")
 
-st.caption("Automatická predikce hodinových cen na následující den; aktualizace přibližně v 7,00 D-1")
+st.markdown(
+    '<div style="font-family:\'Courier New\',monospace;font-size:0.85rem;'
+    'color:#cdd8f0;letter-spacing:1px;margin-bottom:4px;">'
+    'Automatická predikce hodinových cen na následující den; aktualizace přibližně v 7:00 D-1'
+    '</div>',
+    unsafe_allow_html=True
+)
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 if not DB_OK:
