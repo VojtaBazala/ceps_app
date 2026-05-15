@@ -92,7 +92,9 @@ def base_layout(title, color="#00e676", height=280):
 
 # ── HLAVIČKA ───────────────────────────────────────
 st.markdown('<div class="page-title">📈 DAM Forecast</div>', unsafe_allow_html=True)
-st.caption("Day-Ahead Market – forecast cen elektřiny CZ")
+run_date = df_forecast["run_date"].iloc[0] if "run_date" in df_forecast.columns else None
+run_str = pd.to_datetime(run_date).strftime("%d.%m.%Y") if run_date else "—"
+st.caption(f"Predikce hodinových cen na následující den | Vytvořeno: {run_str}")
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 if not DB_OK:
