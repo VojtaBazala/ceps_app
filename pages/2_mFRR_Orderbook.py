@@ -205,7 +205,6 @@ if not df_plus.empty or not df_minus.empty:
             name="mFRR- [MW]",
             marker_color="rgba(255,61,87,0.7)",
             marker_line=dict(color="#ff3d57", width=0.5),
-            hovertemplate="mFRR-<br>Cena: <b>%{y:.2f} EUR/MW</b><br>Množství: <b>%{x:.2f} MW</b>",
             customdata=df_minus["quantity_mw"],
             hovertemplate="mFRR-<br>Cena: <b>%{y:.2f} EUR/MW</b><br>Množství: <b>%{customdata:.2f} MW</b>",
         ))
