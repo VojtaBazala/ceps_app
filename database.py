@@ -1,7 +1,6 @@
 import os, sys
 os.environ["DATABASE_URL"] = "postgres://uqd7goivrkoob:p51129a2d6ee93777b766769fcd20cccb30b1daa4c62b7a54f6d4cd0f7e81204b@c4pml560q9pviv.cluster-czz5s0kz4scl.eu-west-1.rds.amazonaws.com:5432/d2fi1o2fta1pfn"
 sys.path.insert(0, '/content')
-!wget -q https://raw.githubusercontent.com/VojtaBazala/ceps_app/main/database.py -O /content/database.py
 
 from database import get_engine
 from sqlalchemy import text
