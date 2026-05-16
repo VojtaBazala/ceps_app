@@ -272,7 +272,6 @@ def load_bess_summary_history(days: int = 30) -> pd.DataFrame:
     """, engine)
     return df
 
-
 def load_forecast_eval(days: int = 30) -> pd.DataFrame:
     engine = get_engine()
     df = pd.read_sql(f"""
@@ -280,5 +279,15 @@ def load_forecast_eval(days: int = 30) -> pd.DataFrame:
         FROM dam_forecast_eval
         WHERE forecast_for_date >= CURRENT_DATE - INTERVAL '{days} days'
         ORDER BY forecast_for_date DESC, hour
+    """, engine)
+    return df
+def load_mfrr_orderbook() -> pd.DataFrame:
+    engine = get_engine()
+    df = pd.read_sql("""
+        SELECT trade_date, timeseries_id, interval_start, position,
+               quantity_mw, price_eur_mw, cum_quantity_mw
+        FROM mfrr_orderbook
+        WHERE trade_date = (SELECT MAX(trade_date) FROM mfrr_orderbook)
+        ORDER BY price_eur_mw, quantity_mw DESC
     """, engine)
     return df
