@@ -142,7 +142,7 @@ with header_r:
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.85rem;'
     f'color:{TEXT};letter-spacing:1px;margin-bottom:4px;">'
-    f'Predikce hodinových cen na následující den; aktualizace zpravidla do 7:30 D-1'
+    f'Automatická predikce hodinových cen na následující den; aktualizace přibližně v 7:00 D-1'
     f'</div>',
     unsafe_allow_html=True
 )
@@ -169,12 +169,12 @@ if df_forecast.empty:
 
 # ── DATUM ──────────────────────────────────────────
 forecast_date_str = pd.to_datetime(df_forecast["forecast_date"].iloc[0]).strftime("%d.%m.%Y")
-run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).strftime("%d.%m.%Y") if "run_date" in df_forecast.columns else "—"
+run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).strftime("%d.%m.%Y %H:%M") if "run_date" in df_forecast.columns else "—"
 
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.8rem;color:{SUBTEXT};">'
     f'Forecast pro: <span style="color:#00e676">{forecast_date_str}</span>'
-    f' &nbsp;|&nbsp; Vytvořeno: <span style="color:{SUBTEXT}">{run_date_str}</span>'
+    f' &nbsp;|&nbsp; Vytvořeno: <span style="color:#00e676">{run_date_str}</span>'
     f'</div>',
     unsafe_allow_html=True
 )
