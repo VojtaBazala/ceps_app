@@ -124,11 +124,11 @@ st.markdown(
 col_plus, _gap, col_minus = st.columns([5, 0.3, 5])
 
 COL_CONFIG_PLUS = {
-    "Product Type":       st.column_config.TextColumn(width="medium"),
+    "Product Type":       st.column_config.TextColumn(width="small"),
     "Position":           st.column_config.NumberColumn(width="small", format="%d"),
     "Quantity [MW]":      st.column_config.NumberColumn(width="small", format="%.2f"),
-    "Price [EUR/MW]":     st.column_config.NumberColumn(width="medium", format="%.2f"),
-    "Cum. Qty [MW]":      st.column_config.NumberColumn(width="medium", format="%.2f"),
+    "Price [EUR/MW]":     st.column_config.NumberColumn(width="small", format="%.2f"),
+    "Cum. Qty [MW]":      st.column_config.NumberColumn(width="small", format="%.2f"),
 }
 
 with col_plus:
@@ -161,11 +161,11 @@ with col_minus:
         df_show_minus = df_show_minus.round(2)
 
         COL_CONFIG_MINUS = {
-            "Product Type":   st.column_config.TextColumn(width="medium"),
+            "Product Type":   st.column_config.TextColumn(width="small"),
             "Position":       st.column_config.NumberColumn(width="small", format="%d"),
             "Quantity [MW]":  st.column_config.NumberColumn(width="small", format="%.2f"),
-            "Price [EUR/MW]": st.column_config.NumberColumn(width="medium", format="%.2f"),
-            "Cum. Qty [MW]":  st.column_config.NumberColumn(width="medium", format="%.2f"),
+            "Price [EUR/MW]": st.column_config.NumberColumn(width="small", format="%.2f"),
+            "Cum. Qty [MW]":  st.column_config.NumberColumn(width="small", format="%.2f"),
         }
         st.dataframe(df_show_minus, use_container_width=True, hide_index=True, column_config=COL_CONFIG_MINUS)
     else:
