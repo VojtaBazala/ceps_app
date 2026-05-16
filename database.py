@@ -232,7 +232,7 @@ def save_forecast_eval(eval_df: pd.DataFrame):
 def load_latest_forecast() -> pd.DataFrame:
     engine = get_engine()
     df = pd.read_sql("""
-        SELECT forecast_date, hour, forecast_price, model_used
+        SELECT run_date, forecast_date, hour, forecast_price, model_used
         FROM dam_forecast
         WHERE forecast_date = (SELECT MAX(forecast_date) FROM dam_forecast)
         ORDER BY hour
