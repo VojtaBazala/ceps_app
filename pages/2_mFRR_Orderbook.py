@@ -118,8 +118,8 @@ st.markdown(
 st.markdown('<div style="margin-bottom:12px"></div>', unsafe_allow_html=True)
 
 # ── TABULKA ────────────────────────────────────────
-df_show = df[["timeseries_id", "position", "quantity_mw", "price_eur_mw", "cum_quantity_mw"]].copy()
-df_show.columns = ["Timeseries ID", "Position", "Quantity [MW]", "Price [EUR/MW]", "Cum. Quantity [MW]"]
+df_show = df[["product_type", "position", "quantity_mw", "price_eur_mw", "cum_quantity_mw"]].copy()
+df_show.columns = ["Product Type", "Position", "Quantity [MW]", "Price [EUR/MW]", "Cum. Quantity [MW]"]
 df_show = df_show.round(2)
 
 st.dataframe(
