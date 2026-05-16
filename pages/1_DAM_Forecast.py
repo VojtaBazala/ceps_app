@@ -129,11 +129,13 @@ with header_r:
     nav_sp, nav_sel, nav_tema = st.columns([1, 3, 1])
     with nav_sel:
         nav = st.selectbox(
-            "", ["— Přejít na —", "⚡ ČEPS online"],
+            "", ["— Přejít na —", "⚡ ČEPS online", "📋 mFRR+ Orderbook"],
             key="nav_dam", label_visibility="collapsed"
         )
         if nav == "⚡ ČEPS online":
             st.switch_page("CEPS_online.py")
+        elif nav == "📋 mFRR+ Orderbook":
+            st.switch_page("pages/2_mFRR_Orderbook.py")
     with nav_tema:
         if st.button(BTN_TEMA, use_container_width=True):
             st.session_state.dark_mode = not st.session_state.dark_mode
@@ -169,9 +171,7 @@ if df_forecast.empty:
 
 # ── DATUM ──────────────────────────────────────────
 forecast_date_str = pd.to_datetime(df_forecast["forecast_date"].iloc[0]).strftime("%d.%m.%Y")
-import pytz
-_tz = pytz.timezone("Europe/Prague")
-run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).tz_localize("UTC").astimezone(_tz).strftime("%d.%m.%Y %H:%M") if "run_date" in df_forecast.columns else "—"
+run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).strftime("%d.%m.%Y %H:%M") if "run_date" in df_forecast.columns else "—"
 
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.8rem;color:{SUBTEXT};">'
