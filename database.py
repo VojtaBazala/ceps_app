@@ -54,3 +54,38 @@ with engine.connect() as conn:
     """))
     conn.commit()
 print("✅ Tabulky vytvořeny!")
+def load_fcr_overview() -> pd.DataFrame:
+    engine = get_engine()
+    df = pd.read_sql("""
+        SELECT trade_date, product_name, crossborder_price,
+               cz_demand_mw, cz_price, cz_deficit_surplus
+        FROM fcr_overview
+        WHERE trade_date = (SELECT MAX(trade_date) FROM fcr_overview)
+        ORDER BY product_name
+    """, engine)
+    return df
+
+def load_afrr_overview() -> pd.DataFrame:
+    engine = get_engine()
+    df = pd.read_sql("""
+        SELECT trade_date, product, total_marginal_price, total_avg_price,
+               cz_min_price, cz_avg_price, cz_marginal_price,
+               cz_import_export, cz_allocated_mw
+        FROM afrr_overview
+        WHERE trade_date = (SELECT MAX(trade_date) FROM afrr_overview)
+        ORDER BY product
+    """, engine)
+    return df
+
+def load_afrr_orderbook(product: str = None) -> pd.DataFrame:
+    engine = get_engine()
+    where = "WHERE trade_date = (SELECT MAX(trade_date) FROM afrr_orderbook)"
+    if product:
+        where += f" AND product = '{product}'"
+    df = pd.read_sql(f"""
+        SELECT trade_date, product, capacity_price, offered_mw, allocated_mw
+        FROM afrr_orderbook
+        {where}
+        ORDER BY product, capacity_price
+    """, engine)
+    return df
