@@ -171,4 +171,92 @@ with col_minus:
     else:
         st.warning("Žádná mFRR- data")
 
+st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+st.markdown(
+    f'<div style="font-family:\'Courier New\',monospace;font-size:0.7rem;letter-spacing:3px;'
+    f'text-transform:uppercase;color:#ffd740;border-bottom:2px solid #ffd740;'
+    f'padding-bottom:6px;margin-bottom:16px;">📊 Hloubka trhu – supply curve</div>',
+    unsafe_allow_html=True
+)
+
+import plotly.graph_objects as go
+
+if not df_plus.empty or not df_minus.empty:
+    fig = go.Figure()
+
+    # mFRR+ – zelená, vodorovné sloupce vpravo
+    if not df_plus.empty:
+        fig.add_trace(go.Bar(
+            x=df_plus["quantity_mw"],
+            y=df_plus["price_eur_mw"].round(2),
+            orientation="h",
+            name="mFRR+ [MW]",
+            marker_color="rgba(0,230,118,0.7)",
+            marker_line=dict(color="#00e676", width=0.5),
+            hovertemplate="mFRR+<br>Cena: <b>%{y:.2f} EUR/MW</b><br>Množství: <b>%{x:.2f} MW</b>",
+        ))
+
+    # mFRR- – červená, vodorovné sloupce doleva (záporné hodnoty)
+    if not df_minus.empty:
+        fig.add_trace(go.Bar(
+            x=-df_minus["quantity_mw"],
+            y=df_minus["price_eur_mw"].round(2),
+            orientation="h",
+            name="mFRR- [MW]",
+            marker_color="rgba(255,61,87,0.7)",
+            marker_line=dict(color="#ff3d57", width=0.5),
+            hovertemplate="mFRR-<br>Cena: <b>%{y:.2f} EUR/MW</b><br>Množství: <b>%{x:.2f} MW</b>",
+            customdata=df_minus["quantity_mw"],
+            hovertemplate="mFRR-<br>Cena: <b>%{y:.2f} EUR/MW</b><br>Množství: <b>%{customdata:.2f} MW</b>",
+        ))
+
+    # Svislá čára na nule
+    fig.add_vline(x=0, line_color="rgba(255,255,255,0.3)", line_width=1)
+
+    PLOT_BG_C  = "#0f1628" if st.session_state.dark_mode else "#ffffff"
+    PAPER_BG_C = "#0a0e1a" if st.session_state.dark_mode else "#f5f7fa"
+    GRID_COL_C = "#1e2d50" if st.session_state.dark_mode else "#dde3ef"
+    LEG_COL_C  = "#cdd8f0" if st.session_state.dark_mode else "#1a2035"
+
+    # Ticktext pro osu X – zobrazíme absolutní hodnoty
+    max_x = max(
+        df_plus["quantity_mw"].max() if not df_plus.empty else 0,
+        df_minus["quantity_mw"].max() if not df_minus.empty else 0,
+    )
+
+    fig.update_layout(
+        paper_bgcolor=PAPER_BG_C,
+        plot_bgcolor=PLOT_BG_C,
+        font=dict(color=LEG_COL_C, family="Courier New", size=11),
+        barmode="overlay",
+        height=500,
+        margin=dict(l=80, r=20, t=30, b=50),
+        hovermode="closest",
+        legend=dict(
+            bgcolor=PLOT_BG_C, bordercolor=GRID_COL_C,
+            font=dict(size=11, color=LEG_COL_C),
+            orientation="h", y=1.05, x=0
+        ),
+        xaxis=dict(
+            title="Objem [MW]",
+            gridcolor=GRID_COL_C, showgrid=True, color=LEG_COL_C,
+            tickvals=[-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30],
+            ticktext=["30","25","20","15","10","5","0","5","10","15","20","25","30"],
+        ),
+        yaxis=dict(
+            title="Cena [EUR/MW]",
+            gridcolor=GRID_COL_C, showgrid=True, color=LEG_COL_C,
+        ),
+        annotations=[
+            dict(x=-max_x*0.5, y=1.02, xref="x", yref="paper",
+                 text="◄ mFRR-", showarrow=False,
+                 font=dict(color="#ff3d57", size=12, family="Courier New")),
+            dict(x=max_x*0.5, y=1.02, xref="x", yref="paper",
+                 text="mFRR+ ►", showarrow=False,
+                 font=dict(color="#00e676", size=12, family="Courier New")),
+        ]
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
 st.caption("Data: ENTSO-E Transparency Platform – mFRR Balancing Capacity")
