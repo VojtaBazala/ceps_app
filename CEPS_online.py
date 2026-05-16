@@ -198,11 +198,13 @@ with header_r:
     nav_sp, nav_sel, nav_tema = st.columns([1, 3, 1])
     with nav_sel:
         nav = st.selectbox(
-            "", ["— Přejít na —", "📈 DAM Forecast"],
+            "", ["— Přejít na —", "📈 DAM Forecast", "📋 mFRR+ Orderbook"],
             key="nav_ceps", label_visibility="collapsed"
         )
         if nav == "📈 DAM Forecast":
             st.switch_page("pages/1_DAM_Forecast.py")
+        elif nav == "📋 mFRR+ Orderbook":
+            st.switch_page("pages/2_mFRR_Orderbook.py")
     with nav_tema:
         if st.button(BTN_TEMA, use_container_width=True):
             st.session_state.dark_mode = not st.session_state.dark_mode
