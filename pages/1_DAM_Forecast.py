@@ -169,7 +169,9 @@ if df_forecast.empty:
 
 # ── DATUM ──────────────────────────────────────────
 forecast_date_str = pd.to_datetime(df_forecast["forecast_date"].iloc[0]).strftime("%d.%m.%Y")
-run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).strftime("%d.%m.%Y %H:%M") if "run_date" in df_forecast.columns else "—"
+import pytz
+_tz = pytz.timezone("Europe/Prague")
+run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).tz_localize("UTC").astimezone(_tz).strftime("%d.%m.%Y %H:%M") if "run_date" in df_forecast.columns else "—"
 
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.8rem;color:{SUBTEXT};">'
