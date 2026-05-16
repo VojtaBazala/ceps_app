@@ -7,6 +7,7 @@ PAGES = [
     ("⚡ ČEPS online",      "CEPS_online.py"),
     ("📈 DAM Forecast",     "pages/1_DAM_Forecast.py"),
     ("📋 mFRR Orderbooks",  "pages/2_mFRR_Orderbook.py"),
+    ("🏷️ FCR & aFRR",       "pages/3_FCR_aFRR.py"),
 ]
 
 def show_nav(current_key: str):
