@@ -142,7 +142,7 @@ with header_r:
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.85rem;'
     f'color:{TEXT};letter-spacing:1px;margin-bottom:4px;">'
-    f'Automatická predikce hodinových cen na následující den; aktualizace přibližně v 7:00 D-1'
+    f'Predikce hodinových cen na následující den; aktualizace zpravidla do 7:30 D-1'
     f'</div>',
     unsafe_allow_html=True
 )
