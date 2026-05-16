@@ -284,10 +284,9 @@ def load_forecast_eval(days: int = 30) -> pd.DataFrame:
 def load_mfrr_orderbook() -> pd.DataFrame:
     engine = get_engine()
     df = pd.read_sql("""
-        SELECT trade_date, timeseries_id, interval_start, position,
-               quantity_mw, price_eur_mw, cum_quantity_mw
+        SELECT trade_date, timeseries_id, position, quantity_mw, price_eur_mw, cum_quantity_mw
         FROM mfrr_orderbook
         WHERE trade_date = (SELECT MAX(trade_date) FROM mfrr_orderbook)
-        ORDER BY price_eur_mw, quantity_mw DESC
+        ORDER BY price_eur_mw ASC, quantity_mw DESC, timeseries_id ASC
     """, engine)
     return df
