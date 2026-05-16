@@ -184,22 +184,23 @@ import plotly.graph_objects as go
 if not df_plus.empty or not df_minus.empty:
     fig = go.Figure()
 
-    # mFRR+ – zelená, vodorovné sloupce vpravo
+    # mFRR+ – zelená, vlevo (záporné hodnoty)
     if not df_plus.empty:
         fig.add_trace(go.Bar(
-            x=df_plus["quantity_mw"],
+            x=-df_plus["quantity_mw"],
             y=df_plus["price_eur_mw"].round(2),
             orientation="h",
             name="mFRR+ [MW]",
             marker_color="rgba(0,230,118,0.7)",
             marker_line=dict(color="#00e676", width=0.5),
-            hovertemplate="mFRR+<br>Cena: <b>%{y:.2f} EUR/MW</b><br>Množství: <b>%{x:.2f} MW</b>",
+            customdata=df_plus["quantity_mw"],
+            hovertemplate="mFRR+<br>Cena: <b>%{y:.2f} EUR/MW</b><br>Množství: <b>%{customdata:.2f} MW</b>",
         ))
 
-    # mFRR- – červená, vodorovné sloupce doleva (záporné hodnoty)
+    # mFRR- – červená, vpravo (kladné hodnoty)
     if not df_minus.empty:
         fig.add_trace(go.Bar(
-            x=-df_minus["quantity_mw"],
+            x=df_minus["quantity_mw"],
             y=df_minus["price_eur_mw"].round(2),
             orientation="h",
             name="mFRR- [MW]",
@@ -229,12 +230,12 @@ if not df_plus.empty or not df_minus.empty:
         font=dict(color=LEG_COL_C, family="Courier New", size=11),
         barmode="overlay",
         height=500,
-        margin=dict(l=80, r=20, t=30, b=50),
+        margin=dict(l=80, r=20, t=50, b=50),
         hovermode="closest",
         legend=dict(
             bgcolor=PLOT_BG_C, bordercolor=GRID_COL_C,
             font=dict(size=11, color=LEG_COL_C),
-            orientation="h", y=1.05, x=0
+            orientation="h", y=-0.15, x=0.5, xanchor="center"
         ),
         xaxis=dict(
             title="Objem [MW]",
@@ -247,12 +248,14 @@ if not df_plus.empty or not df_minus.empty:
             gridcolor=GRID_COL_C, showgrid=True, color=LEG_COL_C,
         ),
         annotations=[
-            dict(x=-max_x*0.5, y=1.02, xref="x", yref="paper",
-                 text="◄ mFRR-", showarrow=False,
-                 font=dict(color="#ff3d57", size=12, family="Courier New")),
-            dict(x=max_x*0.5, y=1.02, xref="x", yref="paper",
-                 text="mFRR+ ►", showarrow=False,
-                 font=dict(color="#00e676", size=12, family="Courier New")),
+            dict(x=-max_x, y=1.04, xref="x", yref="paper",
+                 text="◄ mFRR+", showarrow=False,
+                 font=dict(color="#00e676", size=12, family="Courier New"),
+                 xanchor="left"),
+            dict(x=max_x, y=1.04, xref="x", yref="paper",
+                 text="mFRR- ►", showarrow=False,
+                 font=dict(color="#ff3d57", size=12, family="Courier New"),
+                 xanchor="right"),
         ]
     )
 
