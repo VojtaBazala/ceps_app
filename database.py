@@ -287,6 +287,7 @@ def load_mfrr_orderbook() -> pd.DataFrame:
         SELECT trade_date, timeseries_id, position, quantity_mw, price_eur_mw, cum_quantity_mw
         FROM mfrr_orderbook
         WHERE trade_date = (SELECT MAX(trade_date) FROM mfrr_orderbook)
-        ORDER BY price_eur_mw ASC, quantity_mw DESC, timeseries_id ASC
+          AND position = 1
+        ORDER BY price_eur_mw ASC, cum_quantity_mw ASC
     """, engine)
     return df
