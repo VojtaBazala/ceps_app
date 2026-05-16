@@ -132,7 +132,7 @@ COL_CONFIG_PLUS = {
 }
 
 with col_plus:
-    st.markdown('<div class="tbl-header-plus">▲ mFRR+ (nabídky regulace nahoru)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tbl-header-plus">▲ mFRR+</div>', unsafe_allow_html=True)
     if not df_plus.empty:
         st.markdown(
             f'<div class="tbl-info">Nabídek: <b>{len(df_plus)}</b> &nbsp;|&nbsp; '
@@ -148,7 +148,7 @@ with col_plus:
         st.warning("Žádná mFRR+ data")
 
 with col_minus:
-    st.markdown('<div class="tbl-header-minus">▼ mFRR- (nabídky regulace dolů)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tbl-header-minus">▼ mFRR-</div>', unsafe_allow_html=True)
     if not df_minus.empty:
         st.markdown(
             f'<div class="tbl-info">Nabídek: <b>{len(df_minus)}</b> &nbsp;|&nbsp; '
@@ -232,11 +232,7 @@ if not df_plus.empty or not df_minus.empty:
         height=500,
         margin=dict(l=80, r=20, t=50, b=50),
         hovermode="closest",
-        legend=dict(
-            bgcolor=PLOT_BG_C, bordercolor=GRID_COL_C,
-            font=dict(size=11, color=LEG_COL_C),
-            orientation="h", y=-0.15, x=0.5, xanchor="center"
-        ),
+        showlegend=False,
         xaxis=dict(
             title="Objem [MW]",
             gridcolor=GRID_COL_C, showgrid=True, color=LEG_COL_C,
