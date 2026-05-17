@@ -137,7 +137,7 @@ def vypocti_delty(df):
     if df.empty or "value1" not in df.columns:
         return {"1 hod.": None, "2 hod.": None, "4 hod.": None, "8 hod.": None}
     df = df.copy()
-    df["delta_min"] = (50.0 - df["value1"]) / 0.2 / 60.0
+    df["delta_min"] = (df["value1"] - 50.0) / 0.2 / 60.0
     delty = {}
     for hodiny, label in [(1,"1 hod."),(2,"2 hod."),(4,"4 hod."),(8,"8 hod.")]:
         pocet = hodiny * 60
