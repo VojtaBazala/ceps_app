@@ -216,7 +216,7 @@ st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.7rem;letter-spacing:3px;'
     f'text-transform:uppercase;color:#00c8ff;border-bottom:2px solid #00c8ff;'
-    f'padding-bottom:6px;margin-bottom:16px;">📅 Forecast vs. Skutečnost – posledních 4 dny</div>',
+    f'padding-bottom:6px;margin-bottom:16px;">📅 Forecast vs. Skutečnost – poslední 4 dny</div>',
     unsafe_allow_html=True
 )
 
