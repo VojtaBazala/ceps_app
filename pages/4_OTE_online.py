@@ -453,8 +453,6 @@ with gcol_odch:
         if df_plot.empty:
             df_plot = df_odch.copy()
         if not df_plot.empty:
-            # Odstraň outliers (chybné hodnoty mimo reálný rozsah)
-            df_plot = df_plot[df_plot[odh_col].between(-50000, 50000)].copy()
             fig_odch = go.Figure()
             fig_odch.add_trace(go.Scatter(
                 x=df_plot["cas"], y=df_plot[odh_col],
