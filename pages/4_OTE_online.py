@@ -185,7 +185,7 @@ def ceps_xml_na_df(result) -> pd.DataFrame:
         items = result.findall("data/item")
     rows = []
     for item in items:
-        radek = {"cas": item.get("date")}
+        radek = {"cas": item.get("date"), "cas_raw": item.get("date")}
         for k, v in item.attrib.items():
             if k != "date":
                 try:    radek[k] = float(v)
@@ -226,10 +226,13 @@ def get_odchylky(date_from, date_to) -> pd.DataFrame:
 @st.cache_data(ttl=300)
 def load_dam(period_days: int, token: str) -> pd.DataFrame:
     now_utc   = datetime.now(timezone.utc)
-    # ENTSO-E max 1 rok zpět, ale ne přesně 365 dní - používáme max 364
     safe_days = min(period_days, 364)
     start_utc = (now_utc - timedelta(days=safe_days)).replace(hour=0, minute=0, second=0, microsecond=0)
     end_utc   = (now_utc + timedelta(days=1)).replace(hour=23, minute=0, second=0, microsecond=0)
+    # Nikdy nepřekročit dnešek + 2 dny
+    max_end = now_utc + timedelta(days=2)
+    if end_utc > max_end:
+        end_utc = max_end
     return get_dam_prices(start_utc, end_utc, token)
 
 
@@ -305,7 +308,7 @@ with st.spinner("Načítám data..."):
     try:
         df_odch = load_odchylky(30)  # max 30 dní
         if not df_odch.empty:
-            st.caption(f"DEBUG cas: {df_odch['cas'].iloc[:2].tolist()} | dtype: {df_odch['cas'].dtype}")
+            st.caption(f"DEBUG cas_raw: {df_odch['cas_raw'].iloc[:3].tolist()} | cas: {df_odch['cas'].iloc[:3].tolist()}")
     except Exception as e:
         st.warning(f"⚠️ Odchylky: {e}")
 
