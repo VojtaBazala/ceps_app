@@ -299,4 +299,14 @@ with st.expander("📋 Hodnocení přesnosti – posledních 30 dní"):
     else:
         st.info("Zatím žádná hodnocení.")
 
-st.caption("Data: ENTSO-E Transparency Platform | Model: HistGradientBoostingRegressor")
+st.markdown(
+    '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&display=swap" rel="stylesheet">',
+    unsafe_allow_html=True
+)
+st.markdown(
+    f'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">'
+    f'<span style="font-size:0.75rem;color:{SUBTEXT};">Data: ENTSO-E Transparency Platform | Model: HistGradientBoostingRegressor</span>'
+    f'<span style="font-family:\'Cinzel\',serif;font-size:0.85rem;color:#8899bb;letter-spacing:2px;">Festina lente</span>'
+    f'</div>',
+    unsafe_allow_html=True
+)
