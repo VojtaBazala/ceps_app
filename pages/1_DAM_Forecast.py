@@ -6,7 +6,6 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import pytz
 import sys
 import os
 
@@ -109,7 +108,7 @@ with header_r:
 
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.85rem;color:{TEXT};letter-spacing:1px;margin-bottom:4px;">'
-    f'Automatická predikce hodinových cen na následující den; aktualizace zpravidla do 7:30 D-1</div>',
+    f'Predikce hodinových cen na následující den; aktualizace zpravidla do 7:30 D-1</div>',
     unsafe_allow_html=True
 )
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
@@ -134,9 +133,8 @@ if df_forecast.empty:
 
 # ── DATUM ──────────────────────────────────────────
 forecast_date_str = pd.to_datetime(df_forecast["forecast_date"].iloc[0]).strftime("%d.%m.%Y")
-_tz = pytz.timezone("Europe/Prague")
 if "run_date" in df_forecast.columns and df_forecast["run_date"].iloc[0] is not None:
-    run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).tz_localize("UTC").astimezone(_tz).strftime("%d.%m.%Y %H:%M")
+    run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).strftime("%d.%m.%Y %H:%M")
 else:
     run_date_str = "—"
 
@@ -213,11 +211,11 @@ st.plotly_chart(fig, use_container_width=True)
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ── FORECAST TRACKING ──────────────────────────────
+# ── FORECAST TRACKING – 4 dny, 2x2 grid ───────────
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.7rem;letter-spacing:3px;'
     f'text-transform:uppercase;color:#00c8ff;border-bottom:2px solid #00c8ff;'
-    f'padding-bottom:6px;margin-bottom:16px;">📅 Forecast vs. Skutečnost – posledních 5 dní</div>',
+    f'padding-bottom:6px;margin-bottom:16px;">📅 Forecast vs. Skutečnost – posledních 4 dny</div>',
     unsafe_allow_html=True
 )
 
@@ -230,7 +228,6 @@ if not df_hist.empty and not df_prices.empty:
     )[:4]
 
     if common_dates:
-        # 2x2 grid
         row_col = {1:(1,1), 2:(1,2), 3:(2,1), 4:(2,2)}
         fig2 = make_subplots(
             rows=2, cols=2,
