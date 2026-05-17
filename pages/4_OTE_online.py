@@ -441,7 +441,7 @@ with gcol_dam:
             buttons=range_buttons(),
             bgcolor=PLOT_BG, activecolor=BORDER,
             font=dict(color=LEG_COL, size=11, family="Courier New"),
-            x=1, xanchor="right", y=1.05, yanchor="top",
+            x=1, xanchor="right", y=0.98, yanchor="top",
         )
         layout_base["xaxis"]["rangeslider"] = dict(visible=False)
         fig_base.update_layout(**layout_base)
@@ -464,6 +464,7 @@ with gcol_odch:
             fig_odch.add_hline(y=0, line=dict(color=BORDER, width=1, dash="dot"))
             layout_odch = base_layout("Odhadovaná cena odchylky [Kč/MWh]", "#ffd740", height=280)
             layout_odch["yaxis"]["type"] = "linear"
+            layout_odch["hovermode"] = False
             layout_odch["xaxis"]["rangeselector"] = dict(
                 buttons=[
                     dict(count=7,  label="1T", step="day", stepmode="backward"),
@@ -471,7 +472,7 @@ with gcol_odch:
                 ],
                 bgcolor=PLOT_BG, activecolor=BORDER,
                 font=dict(color=LEG_COL, size=11, family="Courier New"),
-                x=1, xanchor="right", y=1.05, yanchor="top",
+                x=1, xanchor="right", y=0.98, yanchor="top",
             )
             layout_odch["xaxis"]["rangeslider"] = dict(visible=False)
             fig_odch.update_layout(**layout_odch)
