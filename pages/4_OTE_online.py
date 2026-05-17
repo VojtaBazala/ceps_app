@@ -268,6 +268,10 @@ with st.spinner("Načítám data..."):
 
     try:
         df_odch = load_odchylky(period_days)
+        # DEBUG - zobraz co ČEPS vrátil
+        st.write(f"DEBUG odchylky: rows={len(df_odch)}, cols={list(df_odch.columns) if not df_odch.empty else 'empty'}")
+        if not df_odch.empty:
+            st.write(df_odch.head(3))
     except Exception as e:
         st.warning(f"⚠️ Odchylky (ČEPS): {e}")
 
