@@ -109,7 +109,7 @@ with header_r:
 
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.85rem;color:{TEXT};letter-spacing:1px;margin-bottom:4px;">'
-    f'Predikce hodinových cen na následující den; aktualizace zpravidla do 7:30 D-1</div>',
+    f'Automatická predikce hodinových cen na následující den; aktualizace zpravidla do 7:30 D-1</div>',
     unsafe_allow_html=True
 )
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
@@ -136,7 +136,7 @@ if df_forecast.empty:
 forecast_date_str = pd.to_datetime(df_forecast["forecast_date"].iloc[0]).strftime("%d.%m.%Y")
 _tz = pytz.timezone("Europe/Prague")
 if "run_date" in df_forecast.columns and df_forecast["run_date"].iloc[0] is not None:
-    run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).strftime("%d.%m.%Y %H:%M") if "run_date" in df_forecast.columns else "—"
+    run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).tz_localize("UTC").astimezone(_tz).strftime("%d.%m.%Y %H:%M")
 else:
     run_date_str = "—"
 
@@ -227,16 +227,19 @@ if not df_hist.empty and not df_prices.empty:
     common_dates = sorted(
         [d for d in df_hist["forecast_date"].unique() if d in set(df_prices["price_date"].unique())],
         reverse=True
-    )[:5]
+    )[:4]
 
     if common_dates:
-        n    = len(common_dates)
+        # 2x2 grid
+        row_col = {1:(1,1), 2:(1,2), 3:(2,1), 4:(2,2)}
         fig2 = make_subplots(
-            rows=n, cols=1,
+            rows=2, cols=2,
             subplot_titles=[d.strftime("%d.%m.%Y") for d in common_dates],
-            vertical_spacing=0.08,
+            vertical_spacing=0.15,
+            horizontal_spacing=0.08,
         )
         for i, day in enumerate(common_dates, start=1):
+            r_i, c_i = row_col[i]
             fc_day = df_hist[df_hist["forecast_date"]==day].sort_values("hour")
             ac_day = df_prices[df_prices["price_date"]==day].sort_values("hour")
             if not fc_day.empty:
@@ -245,21 +248,22 @@ if not df_hist.empty and not df_prices.empty:
                     name="Forecast", line=dict(color="#00e676", width=1.5),
                     hovertemplate=f"{day.strftime('%d.%m')} %{{x}}:00<br>Forecast: <b>%{{y:.2f}} EUR</b>",
                     showlegend=(i==1),
-                ), row=i, col=1)
+                ), row=r_i, col=c_i)
             if not ac_day.empty:
                 fig2.add_trace(go.Scatter(
                     x=ac_day["hour"], y=ac_day["price_eur"],
                     name="Skutečnost", line=dict(color="#ff3d57", width=1.5, dash="dot"),
                     hovertemplate=f"{day.strftime('%d.%m')} %{{x}}:00<br>Skutečnost: <b>%{{y:.2f}} EUR</b>",
                     showlegend=(i==1),
-                ), row=i, col=1)
+                ), row=r_i, col=c_i)
             if not fc_day.empty and not ac_day.empty:
                 merged = fc_day.merge(ac_day, on="hour", how="inner")
                 if not merged.empty:
                     mae_day = (merged["forecast_price"]-merged["price_eur"]).abs().mean()
+                    ax = "" if i == 1 else str(i)
                     fig2.add_annotation(
                         text=f"MAE: {mae_day:.1f} EUR/MWh",
-                        xref=f"x{i}", yref=f"y{i}", x=23,
+                        xref=f"x{ax}", yref=f"y{ax}", x=23,
                         y=merged[["forecast_price","price_eur"]].max().max(),
                         showarrow=False,
                         font=dict(size=9, color="#ffd740", family="Courier New"),
@@ -268,15 +272,17 @@ if not df_hist.empty and not df_prices.empty:
         fig2.update_layout(
             paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
             font=dict(color=LEG_COL, family="Courier New", size=11),
-            hovermode="x unified", height=180*n,
-            margin=dict(l=50, r=10, t=30, b=20),
-            legend=dict(bgcolor=PLOT_BG, bordercolor=BORDER, font=dict(size=11, color=LEG_COL), orientation="h", y=1.02, x=0),
+            hovermode="x unified", height=420,
+            margin=dict(l=50, r=10, t=40, b=20),
+            legend=dict(bgcolor=PLOT_BG, bordercolor=BORDER, font=dict(size=11, color=LEG_COL), orientation="h", y=1.05, x=0),
         )
-        for i in range(1, n+1):
-            fig2.update_xaxes(gridcolor=GRID_COL, showgrid=True, color=LEG_COL, tickmode="linear", tick0=0, dtick=2, row=i, col=1)
-            fig2.update_yaxes(gridcolor=GRID_COL, showgrid=True, color=LEG_COL, row=i, col=1)
-            fig2.layout.annotations[i-1].font.color = SUBTEXT
-            fig2.layout.annotations[i-1].font.size  = 11
+        for i, (r_i, c_i) in row_col.items():
+            if i <= len(common_dates):
+                fig2.update_xaxes(gridcolor=GRID_COL, showgrid=True, color=LEG_COL, tickmode="linear", tick0=0, dtick=4, row=r_i, col=c_i)
+                fig2.update_yaxes(gridcolor=GRID_COL, showgrid=True, color=LEG_COL, row=r_i, col=c_i)
+        for j in range(len(common_dates)):
+            fig2.layout.annotations[j].font.color = SUBTEXT
+            fig2.layout.annotations[j].font.size  = 11
         st.plotly_chart(fig2, use_container_width=True)
     else:
         st.info("Zatím nejsou dostupná data pro porovnání.")
