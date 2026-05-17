@@ -134,13 +134,13 @@ if not df_fcr.empty:
         return name.replace("NEGPOS_", "").replace("_", "–")
 
     df_fcr_show = df_fcr.copy()
-    df_fcr_show["Blok"] = df_fcr_show["product_name"].apply(fmt_block)
+    df_fcr_show["h"] = df_fcr_show["product_name"].apply(fmt_block)
     df_fcr_show = df_fcr_show.rename(columns={
         "cz_price":           "CZ Cena 4h blok [EUR/MW]",
         "cz_deficit_surplus": "CZ Deficit(-)/Přebytek(+) [MW]",
     })
     df_fcr_show["CZ Cena přepočet 1h [EUR/MW]"] = df_fcr_show["CZ Cena 4h blok [EUR/MW]"] / 4
-    df_fcr_show = df_fcr_show[["Blok", "CZ Cena 4h blok [EUR/MW]", "CZ Cena přepočet 1h [EUR/MW]", "CZ Deficit(-)/Přebytek(+) [MW]"]]
+    df_fcr_show = df_fcr_show[["h", "CZ Cena 4h blok [EUR/MW]", "CZ Cena přepočet 1h [EUR/MW]", "CZ Deficit(-)/Přebytek(+) [MW]"]]
 
     col_tbl, _g, col_chart = st.columns([4, 0.3, 3])
 
@@ -150,7 +150,7 @@ if not df_fcr.empty:
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Blok":                           st.column_config.TextColumn(width="small"),
+                "h":                               st.column_config.TextColumn(width="small"),
                 "CZ Cena 4h blok [EUR/MW]":       st.column_config.NumberColumn(width="small", format="%.2f"),
                 "CZ Cena přepočet 1h [EUR/MW]":   st.column_config.NumberColumn(width="small", format="%.2f"),
                 "CZ Deficit(-)/Přebytek(+) [MW]": st.column_config.NumberColumn(width="small", format="%.0f"),
@@ -160,7 +160,7 @@ if not df_fcr.empty:
     with col_chart:
         fig_fcr = go.Figure()
         fig_fcr.add_trace(go.Bar(
-            x=df_fcr_show["Blok"],
+            x=df_fcr_show["h"],
             y=df_fcr_show["CZ Cena 4h blok [EUR/MW]"],
             name="CZ cena",
             marker_color="#ffd740",
@@ -199,7 +199,7 @@ if not df_afrr.empty:
     tbl_pos, _gg, tbl_neg = st.columns([5, 0.3, 5])
 
     COL_CFG_AFRR = {
-        "Blok":                        st.column_config.TextColumn(width="small"),
+        "h":                              st.column_config.TextColumn(width="small"),
         "CZ Průměr [EUR/MW/h]":        st.column_config.NumberColumn(width="small", format="%.2f"),
         "CZ Marginální [EUR/MW/h]":    st.column_config.NumberColumn(width="small", format="%.2f"),
         "CZ Import(-)/Export(+) [MW]": st.column_config.NumberColumn(width="small", format="%.0f"),
@@ -213,12 +213,12 @@ if not df_afrr.empty:
         )
         if not df_pos.empty:
             df_p = df_pos.copy()
-            df_p["Blok"] = blok_labels[:len(df_p)]
+            df_p["h"] = blok_labels[:len(df_p)]
             df_p = df_p.rename(columns={
                 "cz_avg_price":      "CZ Průměr [EUR/MW/h]",
                 "cz_marginal_price": "CZ Marginální [EUR/MW/h]",
                 "cz_import_export":  "CZ Import(-)/Export(+) [MW]",
-            })[["Blok", "CZ Průměr [EUR/MW/h]", "CZ Marginální [EUR/MW/h]", "CZ Import(-)/Export(+) [MW]"]]
+            })[["h", "CZ Průměr [EUR/MW/h]", "CZ Marginální [EUR/MW/h]", "CZ Import(-)/Export(+) [MW]"]]
             st.dataframe(df_p.round(2), use_container_width=True, hide_index=True, column_config=COL_CFG_AFRR)
 
     with tbl_neg:
@@ -229,12 +229,12 @@ if not df_afrr.empty:
         )
         if not df_neg.empty:
             df_n = df_neg.copy()
-            df_n["Blok"] = blok_labels[:len(df_n)]
+            df_n["h"] = blok_labels[:len(df_n)]
             df_n = df_n.rename(columns={
                 "cz_avg_price":      "CZ Průměr [EUR/MW/h]",
                 "cz_marginal_price": "CZ Marginální [EUR/MW/h]",
                 "cz_import_export":  "CZ Import(-)/Export(+) [MW]",
-            })[["Blok", "CZ Průměr [EUR/MW/h]", "CZ Marginální [EUR/MW/h]", "CZ Import(-)/Export(+) [MW]"]]
+            })[["h", "CZ Průměr [EUR/MW/h]", "CZ Marginální [EUR/MW/h]", "CZ Import(-)/Export(+) [MW]"]]
             st.dataframe(df_n.round(2), use_container_width=True, hide_index=True, column_config=COL_CFG_AFRR)
 
     g_pos, _gg, g_neg = st.columns([5, 0.3, 5])
