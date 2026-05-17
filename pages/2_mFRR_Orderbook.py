@@ -217,4 +217,14 @@ if not df_plus.empty or not df_minus.empty:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-st.caption("Data: ENTSO-E Transparency Platform – mFRR Balancing Capacity")
+st.markdown(
+    '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&display=swap" rel="stylesheet">',
+    unsafe_allow_html=True
+)
+st.markdown(
+    f'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">'
+    f'<span style="font-size:0.75rem;color:{SUBTEXT};">Data: ENTSO-E Transparency Platform – mFRR Balancing Capacity</span>'
+    f'<span style="font-family:\'Cinzel\',serif;font-size:0.85rem;color:#8899bb;letter-spacing:2px;">Pretium rectum</span>'
+    f'</div>',
+    unsafe_allow_html=True
+)
