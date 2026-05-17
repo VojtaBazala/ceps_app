@@ -109,12 +109,12 @@ if df_fcr.empty and df_afrr.empty:
     st.warning("⚠ Zatím nejsou k dispozici žádná data.")
     st.stop()
 
-# Datum
-trade_date = pd.to_datetime(df_fcr["trade_date"].iloc[0]).strftime("%d.%m.%Y") if not df_fcr.empty else "—"
+# Datum FCR
+fcr_date  = pd.to_datetime(df_fcr["trade_date"].iloc[0]).strftime("%d.%m.%Y")  if not df_fcr.empty  else "—"
+afrr_date = pd.to_datetime(df_afrr["trade_date"].iloc[0]).strftime("%d.%m.%Y") if not df_afrr.empty else "—"
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.8rem;color:{SUBTEXT};margin-bottom:12px;">'
-    f'Datum dodávky: <span style="color:#00c8ff">{trade_date}</span>'
-    f' &nbsp;|&nbsp; Zdroj: <span style="color:{SUBTEXT}">regelleistung.net</span>'
+    f'Hodnoty pro datum dodávky FCR: <span style="color:#ffd740">{fcr_date}</span>'
     f'</div>',
     unsafe_allow_html=True
 )
@@ -123,62 +123,58 @@ st.markdown(
 st.markdown('<div class="section-title fcr">⚡ FCR – Frequency Containment Reserve</div>', unsafe_allow_html=True)
 
 if not df_fcr.empty:
-    # Přejmenování bloků
     def fmt_block(name):
         return name.replace("NEGPOS_", "").replace("_", "–")
 
     df_fcr_show = df_fcr.copy()
     df_fcr_show["Blok"] = df_fcr_show["product_name"].apply(fmt_block)
     df_fcr_show = df_fcr_show.rename(columns={
-        "crossborder_price":  "Crossborder [EUR/MW]",
-        "cz_demand_mw":       "CZ Poptávka [MW]",
         "cz_price":           "CZ Cena [EUR/MW]",
         "cz_deficit_surplus": "CZ Deficit(-)/Přebytek(+) [MW]",
-    })[["Blok", "Crossborder [EUR/MW]", "CZ Poptávka [MW]", "CZ Cena [EUR/MW]", "CZ Deficit(-)/Přebytek(+) [MW]"]]
+    })[["Blok", "CZ Cena [EUR/MW]", "CZ Deficit(-)/Přebytek(+) [MW]"]]
 
-    st.dataframe(
-        df_fcr_show.round(2),
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Blok":                           st.column_config.TextColumn(width="small"),
-            "Crossborder [EUR/MW]":           st.column_config.NumberColumn(width="medium", format="%.2f"),
-            "CZ Poptávka [MW]":               st.column_config.NumberColumn(width="small",  format="%.0f"),
-            "CZ Cena [EUR/MW]":               st.column_config.NumberColumn(width="medium", format="%.2f"),
-            "CZ Deficit(-)/Přebytek(+) [MW]": st.column_config.NumberColumn(width="medium", format="%.0f"),
-        }
-    )
+    col_tbl, _g, col_chart = st.columns([3, 0.3, 4])
 
-    # Mini graf FCR cen
-    fig_fcr = go.Figure()
-    fig_fcr.add_trace(go.Bar(
-        x=df_fcr_show["Blok"],
-        y=df_fcr_show["CZ Cena [EUR/MW]"],
-        name="CZ cena",
-        marker_color="#ffd740",
-        hovertemplate="%{x}<br><b>%{y:.2f} EUR/MW</b>",
-    ))
-    fig_fcr.add_trace(go.Scatter(
-        x=df_fcr_show["Blok"],
-        y=df_fcr_show["Crossborder [EUR/MW]"],
-        name="Crossborder cena",
-        line=dict(color="#00c8ff", width=2, dash="dot"),
-        hovertemplate="%{x}<br><b>%{y:.2f} EUR/MW</b>",
-    ))
-    fig_fcr.update_layout(
-        paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
-        font=dict(color=LEG_COL, family="Courier New", size=11),
-        height=220, margin=dict(l=50, r=10, t=30, b=30),
-        hovermode="x unified",
-        legend=dict(bgcolor=PLOT_BG, bordercolor=BORDER, font=dict(size=11, color=LEG_COL)),
-        xaxis=dict(gridcolor=GRID_COL, color=LEG_COL),
-        yaxis=dict(gridcolor=GRID_COL, color=LEG_COL, title="EUR/MW"),
-    )
-    st.plotly_chart(fig_fcr, use_container_width=True)
+    with col_tbl:
+        st.dataframe(
+            df_fcr_show.round(2),
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Blok":                           st.column_config.TextColumn(width="small"),
+                "CZ Cena [EUR/MW]":               st.column_config.NumberColumn(width="medium", format="%.2f"),
+                "CZ Deficit(-)/Přebytek(+) [MW]": st.column_config.NumberColumn(width="medium", format="%.0f"),
+            }
+        )
+
+    with col_chart:
+        fig_fcr = go.Figure()
+        fig_fcr.add_trace(go.Bar(
+            x=df_fcr_show["Blok"],
+            y=df_fcr_show["CZ Cena [EUR/MW]"],
+            name="CZ cena",
+            marker_color="#ffd740",
+            hovertemplate="%{x}<br><b>%{y:.2f} EUR/MW</b>",
+        ))
+        fig_fcr.update_layout(
+            paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
+            font=dict(color=LEG_COL, family="Courier New", size=11),
+            height=260, margin=dict(l=50, r=10, t=20, b=30),
+            showlegend=False, hovermode="x unified",
+            xaxis=dict(gridcolor=GRID_COL, color=LEG_COL),
+            yaxis=dict(gridcolor=GRID_COL, color=LEG_COL, title="EUR/MW"),
+        )
+        st.plotly_chart(fig_fcr, use_container_width=True)
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 # ── aFRR PŘEHLED ───────────────────────────────────
+st.markdown(
+    f'<div style="font-family:\'Courier New\',monospace;font-size:0.8rem;color:{SUBTEXT};margin-bottom:12px;">'
+    f'Hodnoty pro datum dodávky aFRR: <span style="color:#00e676">{afrr_date}</span>'
+    f'</div>',
+    unsafe_allow_html=True
+)
 st.markdown('<div class="section-title afrr">📡 aFRR – Automatic Frequency Restoration Reserve</div>', unsafe_allow_html=True)
 
 if not df_afrr.empty:
