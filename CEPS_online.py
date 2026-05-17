@@ -355,17 +355,14 @@ if not df_cena.empty:
     fig3.update_layout(**base_layout("Aktuální cena RE [EUR/MWh]", "#00e676"))
     st.plotly_chart(fig3, use_container_width=True)
 
-st.caption("Data: ČEPS, a.s. – Oficiální SOAP API (cepsdata.asmx)")
-
-# ── CITÁT ──────────────────────────────────────────
 st.markdown(
     '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&display=swap" rel="stylesheet">',
     unsafe_allow_html=True
 )
 st.markdown(
-    '<div style="font-family:\'Cinzel\',serif;font-size:0.85rem;color:#8899bb;'
-    'text-align:right;letter-spacing:2px;margin-top:8px;font-style:normal;">'
-    'Carpe diem, hora ruit'
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">'
+    f'<span style="font-size:0.75rem;color:{SUBTEXT};">Data: ČEPS, a.s. – Oficiální SOAP API (cepsdata.asmx)</span>'
+    '<span style="font-family:\'Cinzel\',serif;font-size:0.85rem;color:#8899bb;letter-spacing:2px;">Carpe diem, hora ruit</span>'
     '</div>',
     unsafe_allow_html=True
 )
