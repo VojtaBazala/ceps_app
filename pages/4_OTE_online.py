@@ -184,8 +184,8 @@ def ceps_xml_na_df(result) -> pd.DataFrame:
     if not items:
         items = result.findall("data/item")
     rows = []
-    for item in items:
-        radek = {"cas": item.get("date"), "cas_raw": item.get("date")}
+    for i, item in enumerate(items):
+        radek = {"cas": item.get("date"), "cas_raw": item.get("date"), "_all_attrs": str(dict(item.attrib)) if i < 2 else ""}
         for k, v in item.attrib.items():
             if k != "date":
                 try:    radek[k] = float(v)
@@ -228,11 +228,9 @@ def load_dam(period_days: int, token: str) -> pd.DataFrame:
     now_utc   = datetime.now(timezone.utc)
     safe_days = min(period_days, 364)
     start_utc = (now_utc - timedelta(days=safe_days)).replace(hour=0, minute=0, second=0, microsecond=0)
-    end_utc   = (now_utc + timedelta(days=1)).replace(hour=23, minute=0, second=0, microsecond=0)
-    # Nikdy nepřekročit dnešek + 2 dny
-    max_end = now_utc + timedelta(days=2)
-    if end_utc > max_end:
-        end_utc = max_end
+    # End = zítra 23:00 UTC (pro zítřejší DAM ceny)
+    tomorrow  = now_utc + timedelta(days=1)
+    end_utc   = tomorrow.replace(hour=23, minute=0, second=0, microsecond=0)
     return get_dam_prices(start_utc, end_utc, token)
 
 
@@ -301,14 +299,16 @@ df_odch  = pd.DataFrame()
 
 with st.spinner("Načítám data..."):
     try:
-        df_dam   = load_dam(365, token)  # vždy stáhni 12M pro grafy
+        df_dam   = load_dam(30, token)  # stáhni 30 dní, pro delší grafy uděláme více requestů
         df_index = compute_dam_index(df_dam)
     except Exception as e:
         st.warning(f"⚠️ DAM data: {e}")
     try:
         df_odch = load_odchylky(30)  # max 30 dní
         if not df_odch.empty:
-            st.caption(f"DEBUG cas_raw: {df_odch['cas_raw'].iloc[:3].tolist()} | cas: {df_odch['cas'].iloc[:3].tolist()}")
+            st.caption(f"DEBUG cas_raw: {df_odch['cas_raw'].iloc[:3].tolist()}")
+            st.caption(f"DEBUG all attrs: {df_odch['_all_attrs'].iloc[0]}")
+            st.caption(f"DEBUG all cols: {list(df_odch.columns)}")
     except Exception as e:
         st.warning(f"⚠️ Odchylky: {e}")
 
