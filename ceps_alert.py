@@ -30,14 +30,20 @@ from zeep.transports import Transport
 from sqlalchemy import create_engine, text
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import EMAIL_RECIPIENTS
+from config import (
+    EMAIL_RECIPIENTS,
+    FREQ_MIN, FREQ_MAX,
+    DELTA_1H_MAX, DELTA_4H_MAX, DELTA_8H_MAX,
+    CENA_MAX, CENA_MIN,
+    ALERT_COOLDOWN_HOURS,
+)
 
 # ── KONFIGURACE ────────────────────────────────────
 DB_URL         = os.environ.get("DATABASE_URL", "")
 GMAIL_USER     = "oldrich.bazala@gmail.com"
 GMAIL_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 EMAIL_TO       = ", ".join(EMAIL_RECIPIENTS)
-COOLDOWN_HOURS = 1
+COOLDOWN_HOURS = ALERT_COOLDOWN_HOURS
 
 WSDL = "https://vip-prod-service-00-azapp.azurewebsites.net/_layouts/cepsdata.asmx?WSDL"
 NS   = "https://www.ceps.cz/CepsData/StructuredData/1.0"
@@ -49,15 +55,6 @@ if not GMAIL_PASSWORD:
     raise ValueError("GMAIL_APP_PASSWORD není nastavena!")
 
 engine = create_engine(DB_URL.replace("postgres://", "postgresql://", 1))
-
-# ── THRESHOLDY ─────────────────────────────────────
-FREQ_MIN       = 49.85
-FREQ_MAX       = 50.15
-DELTA_1H_MAX   = 0.10   # MWh
-DELTA_4H_MAX   = 0.20
-DELTA_8H_MAX   = 0.40
-CENA_MAX       = 500.0
-CENA_MIN       = -100.0
 
 # ── DB: alert_log tabulka ──────────────────────────
 def init_alert_log():
