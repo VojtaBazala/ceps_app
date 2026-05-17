@@ -424,4 +424,14 @@ if not df_ob_pos.empty or not df_ob_neg.empty:
     )
     st.plotly_chart(fig_ob, use_container_width=True)
 
-st.caption("Data: regelleistung.net – FCR & aFRR Capacity Market Results")
+st.markdown(
+    '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&display=swap" rel="stylesheet">',
+    unsafe_allow_html=True
+)
+st.markdown(
+    f'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">'
+    f'<span style="font-size:0.75rem;color:{SUBTEXT};">Data: regelleistung.net – FCR & aFRR Capacity Market Results</span>'
+    f'<span style="font-family:\'Cinzel\',serif;font-size:0.85rem;color:#8899bb;letter-spacing:2px;">Sine sole sileo</span>'
+    f'</div>',
+    unsafe_allow_html=True
+)
