@@ -194,7 +194,16 @@ def ceps_xml_na_df(result) -> pd.DataFrame:
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
-    df["cas"] = pd.to_datetime(df["cas"], utc=True, errors="coerce").dt.tz_convert("Europe/Prague")
+    # Zkus různé formáty datumu
+    try:
+        df["cas"] = pd.to_datetime(df["cas"], utc=True, errors="coerce").dt.tz_convert("Europe/Prague")
+    except Exception:
+        try:
+            df["cas"] = pd.to_datetime(df["cas"], errors="coerce")
+            if df["cas"].dt.tz is None:
+                df["cas"] = df["cas"].dt.tz_localize("Europe/Prague")
+        except Exception:
+            pass
     return df
 
 
@@ -217,8 +226,10 @@ def get_odchylky(date_from, date_to) -> pd.DataFrame:
 @st.cache_data(ttl=300)
 def load_dam(period_days: int, token: str) -> pd.DataFrame:
     now_utc   = datetime.now(timezone.utc)
-    start_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=period_days)
-    end_utc   = now_utc.replace(hour=23, minute=0, second=0, microsecond=0) + timedelta(days=1)
+    # ENTSO-E max 1 rok zpět, ale ne přesně 365 dní - používáme max 364
+    safe_days = min(period_days, 364)
+    start_utc = (now_utc - timedelta(days=safe_days)).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_utc   = (now_utc + timedelta(days=1)).replace(hour=23, minute=0, second=0, microsecond=0)
     return get_dam_prices(start_utc, end_utc, token)
 
 
@@ -293,6 +304,8 @@ with st.spinner("Načítám data..."):
         st.warning(f"⚠️ DAM data: {e}")
     try:
         df_odch = load_odchylky(30)  # max 30 dní
+        if not df_odch.empty:
+            st.caption(f"DEBUG cas: {df_odch['cas'].iloc[:2].tolist()} | dtype: {df_odch['cas'].dtype}")
     except Exception as e:
         st.warning(f"⚠️ Odchylky: {e}")
 
