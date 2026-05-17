@@ -225,9 +225,8 @@ def get_odchylky(date_from, date_to) -> pd.DataFrame:
 @st.cache_data(ttl=300)
 def load_dam(period_days: int, token: str) -> pd.DataFrame:
     now_utc   = datetime.now(timezone.utc)
-    safe_days = min(period_days, 364)
+    safe_days = min(period_days, 360)
     start_utc = (now_utc - timedelta(days=safe_days)).replace(hour=0, minute=0, second=0, microsecond=0)
-    # End = zítra 23:00 UTC (pro zítřejší DAM ceny)
     tomorrow  = now_utc + timedelta(days=1)
     end_utc   = tomorrow.replace(hour=23, minute=0, second=0, microsecond=0)
     return get_dam_prices(start_utc, end_utc, token)
@@ -235,11 +234,27 @@ def load_dam(period_days: int, token: str) -> pd.DataFrame:
 
 @st.cache_data(ttl=55)
 def load_odchylky(period_days: int) -> pd.DataFrame:
+    """Stahuje odchylky po dávkách max 30 dní."""
     now_local = datetime.now(TZ).replace(tzinfo=None)
-    pulnoc    = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
-    date_from = pulnoc - timedelta(days=min(period_days - 1, 29))
-    date_to   = now_local
-    return get_odchylky(date_from, date_to)
+    end_dt    = now_local
+    days_left = min(period_days, 365)
+    frames    = []
+
+    while days_left > 0:
+        batch     = min(days_left, 30)
+        start_dt  = end_dt - timedelta(days=batch)
+        df_batch  = get_odchylky(start_dt, end_dt)
+        if not df_batch.empty:
+            frames.append(df_batch)
+        end_dt    = start_dt
+        days_left -= batch
+
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True)
+    if "cas" in df.columns:
+        df = df.sort_values("cas").reset_index(drop=True)
+    return df
 
 
 def base_layout(title, color="#00c8ff", height=260):
@@ -298,12 +313,12 @@ df_odch  = pd.DataFrame()
 
 with st.spinner("Načítám data..."):
     try:
-        df_dam   = load_dam(30, token)  # stáhni 30 dní, pro delší grafy uděláme více requestů
+        df_dam   = load_dam(360, token)
         df_index = compute_dam_index(df_dam)
     except Exception as e:
         st.warning(f"⚠️ DAM data: {e}")
     try:
-        df_odch = load_odchylky(30)
+        df_odch = load_odchylky(365)
     except Exception as e:
         st.warning(f"⚠️ Odchylky: {e}")
 
