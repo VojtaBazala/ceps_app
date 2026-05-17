@@ -185,33 +185,50 @@ if not df_afrr.empty:
         p = p.replace("POS_", "▲ ").replace("NEG_", "▼ ").replace("_", "–")
         return p
 
-    df_afrr_show = df_afrr.copy()
-    df_afrr_show["Produkt"] = df_afrr_show["product"].apply(fmt_afrr_product)
-    df_afrr_show = df_afrr_show.rename(columns={
-        "cz_min_price":      "CZ Min [EUR/MW/h]",
-        "cz_avg_price":      "CZ Průměr [EUR/MW/h]",
-        "cz_marginal_price": "CZ Marginální [EUR/MW/h]",
-        "cz_import_export":  "CZ Import(-)/Export(+) [MW]",
-    })[["Produkt", "CZ Min [EUR/MW/h]", "CZ Průměr [EUR/MW/h]",
-        "CZ Marginální [EUR/MW/h]", "CZ Import(-)/Export(+) [MW]"]]
-
-    st.dataframe(
-        df_afrr_show.round(2),
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Produkt":                     st.column_config.TextColumn(width="small"),
-            "CZ Min [EUR/MW/h]":           st.column_config.NumberColumn(width="small",  format="%.2f"),
-            "CZ Průměr [EUR/MW/h]":        st.column_config.NumberColumn(width="small",  format="%.2f"),
-            "CZ Marginální [EUR/MW/h]":    st.column_config.NumberColumn(width="medium", format="%.2f"),
-            "CZ Import(-)/Export(+) [MW]": st.column_config.NumberColumn(width="medium", format="%.0f"),
-        }
-    )
-
-    # Grafy aFRR – vedle sebe
     df_pos = df_afrr[df_afrr["product"].str.startswith("POS")].copy()
     df_neg = df_afrr[df_afrr["product"].str.startswith("NEG")].copy()
     blok_labels = ["00–04", "04–08", "08–12", "12–16", "16–20", "20–24"]
+
+    tbl_pos, _gg, tbl_neg = st.columns([5, 0.3, 5])
+
+    COL_CFG_AFRR = {
+        "Blok":                        st.column_config.TextColumn(width="small"),
+        "CZ Průměr [EUR/MW/h]":        st.column_config.NumberColumn(width="small",  format="%.2f"),
+        "CZ Marginální [EUR/MW/h]":    st.column_config.NumberColumn(width="medium", format="%.2f"),
+        "CZ Import(-)/Export(+) [MW]": st.column_config.NumberColumn(width="medium", format="%.0f"),
+    }
+
+    with tbl_pos:
+        st.markdown(
+            f'<div style="font-family:\'Courier New\',monospace;font-size:0.7rem;letter-spacing:2px;'
+            f'color:#00e676;border-bottom:2px solid #00e676;padding-bottom:4px;margin-bottom:8px;">▲ aFRR+</div>',
+            unsafe_allow_html=True
+        )
+        if not df_pos.empty:
+            df_p = df_pos.copy()
+            df_p["Blok"] = blok_labels[:len(df_p)]
+            df_p = df_p.rename(columns={
+                "cz_avg_price":      "CZ Průměr [EUR/MW/h]",
+                "cz_marginal_price": "CZ Marginální [EUR/MW/h]",
+                "cz_import_export":  "CZ Import(-)/Export(+) [MW]",
+            })[["Blok", "CZ Průměr [EUR/MW/h]", "CZ Marginální [EUR/MW/h]", "CZ Import(-)/Export(+) [MW]"]]
+            st.dataframe(df_p.round(2), use_container_width=True, hide_index=True, column_config=COL_CFG_AFRR)
+
+    with tbl_neg:
+        st.markdown(
+            f'<div style="font-family:\'Courier New\',monospace;font-size:0.7rem;letter-spacing:2px;'
+            f'color:#ff3d57;border-bottom:2px solid #ff3d57;padding-bottom:4px;margin-bottom:8px;">▼ aFRR-</div>',
+            unsafe_allow_html=True
+        )
+        if not df_neg.empty:
+            df_n = df_neg.copy()
+            df_n["Blok"] = blok_labels[:len(df_n)]
+            df_n = df_n.rename(columns={
+                "cz_avg_price":      "CZ Průměr [EUR/MW/h]",
+                "cz_marginal_price": "CZ Marginální [EUR/MW/h]",
+                "cz_import_export":  "CZ Import(-)/Export(+) [MW]",
+            })[["Blok", "CZ Průměr [EUR/MW/h]", "CZ Marginální [EUR/MW/h]", "CZ Import(-)/Export(+) [MW]"]]
+            st.dataframe(df_n.round(2), use_container_width=True, hide_index=True, column_config=COL_CFG_AFRR)
 
     g_pos, _gg, g_neg = st.columns([5, 0.3, 5])
 
