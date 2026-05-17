@@ -185,25 +185,23 @@ def ceps_xml_na_df(result) -> pd.DataFrame:
         items = result.findall("data/item")
     rows = []
     for i, item in enumerate(items):
-        radek = {"cas": item.get("date"), "cas_raw": item.get("date"), "_all_attrs": str(dict(item.attrib)) if i < 2 else ""}
+        radek = {
+            "cas":      item.attrib.get("value13"),
+            "interval": item.attrib.get("value15"),
+        }
         for k, v in item.attrib.items():
-            if k != "date":
+            if k not in ("value13", "value15"):
                 try:    radek[k] = float(v)
                 except: radek[k] = None
         rows.append(radek)
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
-    # Zkus různé formáty datumu
-    try:
-        df["cas"] = pd.to_datetime(df["cas"], utc=True, errors="coerce").dt.tz_convert("Europe/Prague")
-    except Exception:
-        try:
-            df["cas"] = pd.to_datetime(df["cas"], errors="coerce")
-            if df["cas"].dt.tz is None:
-                df["cas"] = df["cas"].dt.tz_localize("Europe/Prague")
-        except Exception:
-            pass
+    df["cas"] = pd.to_datetime(df["cas"], errors="coerce", utc=False)
+    if df["cas"].dt.tz is None:
+        df["cas"] = df["cas"].dt.tz_localize("Europe/Prague", ambiguous="infer", nonexistent="shift_forward")
+    else:
+        df["cas"] = df["cas"].dt.tz_convert("Europe/Prague")
     return df
 
 
@@ -213,12 +211,13 @@ def get_odchylky(date_from, date_to) -> pd.DataFrame:
     df = ceps_xml_na_df(result)
     if df.empty:
         return df
-    # Přejmenuj value2 na odh_cena (hlavní sloupec = odhadovaná cena odchylky)
     rename = {}
     if "value2" in df.columns:
         rename["value2"] = "odh_cena"
     if rename:
         df = df.rename(columns=rename)
+    # Odstraň pomocné sloupce
+    df = df.drop(columns=[c for c in ["cas_raw", "_all_attrs"] if c in df.columns], errors="ignore")
     return df
 
 
@@ -304,11 +303,7 @@ with st.spinner("Načítám data..."):
     except Exception as e:
         st.warning(f"⚠️ DAM data: {e}")
     try:
-        df_odch = load_odchylky(30)  # max 30 dní
-        if not df_odch.empty:
-            st.caption(f"DEBUG cas_raw: {df_odch['cas_raw'].iloc[:3].tolist()}")
-            st.caption(f"DEBUG all attrs: {df_odch['_all_attrs'].iloc[0]}")
-            st.caption(f"DEBUG all cols: {list(df_odch.columns)}")
+        df_odch = load_odchylky(30)
     except Exception as e:
         st.warning(f"⚠️ Odchylky: {e}")
 
@@ -380,17 +375,12 @@ with col_odch_col:
             df_valid = df_odch.copy()
 
         last = df_valid.iloc[-1]
-        cas_val = last["cas"]
-
-        # Aktuální interval
+        cas_val      = last["cas"]
+        interval_str = last.get("interval", "—") or "—"
         if pd.notna(cas_val):
-            cas_from = pd.Timestamp(cas_val)
-            cas_to   = cas_from + timedelta(minutes=15)
-            interval_str = f"{cas_from.strftime('%H:%M')} – {cas_to.strftime('%H:%M')}"
-            date_str     = cas_from.strftime("%d.%m.%Y")
+            date_str = pd.Timestamp(cas_val).strftime("%d.%m.%Y")
         else:
-            interval_str = "—"
-            date_str     = "—"
+            date_str = "—"
 
         first_val = last[odh_col]
         color_v   = "#ff3d57" if first_val < 0 else "#ffd740" if first_val > 3000 else "#00e676"
@@ -409,14 +399,12 @@ with col_odch_col:
         for _, r in df_tbl.iterrows():
             c = r["cas"]
             if pd.notna(c):
-                c_ts  = pd.Timestamp(c)
-                datum = c_ts.strftime("%d.%m.")
-                intvl = f"{c_ts.strftime('%H:%M')} – {(c_ts + timedelta(minutes=15)).strftime('%H:%M')}"
+                datum = pd.Timestamp(c).strftime("%d.%m.")
             else:
                 datum = "—"
-                intvl = "—"
-            cena = r[odh_col]
-            clr  = "#ff3d57" if cena < 0 else "#ffd740" if cena > 3000 else "#00e676"
+            intvl = r.get("interval", "—") or "—"
+            cena  = r[odh_col]
+            clr   = "#ff3d57" if cena < 0 else "#ffd740" if cena > 3000 else "#00e676"
             rows_html += (
                 f"<tr>"
                 f"<td style='color:{SUBTEXT}'>{datum}</td>"
