@@ -11,6 +11,8 @@ import pytz
 import sys
 import os
 from datetime import datetime, timedelta, date
+from zeep import Client
+from zeep.transports import Transport
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from navigation import show_nav
@@ -83,12 +85,30 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
+from zeep import Client
+from zeep.transports import Transport
+
 TZ   = pytz.timezone("Europe/Prague")
-WSDL = "https://www.ote-cr.cz/pw-data/services/PublicDataService"
+WSDL = "https://www.ote-cr.cz/pw-data/services/PublicDataService?wsdl"
 NS   = "http://www.ote-cr.cz/schema/service/public"
 
-# ── OTE SOAP HELPER ────────────────────────────────
-def soap_call(action: str, body_inner: str) -> ET.Element:
+@st.cache_resource
+def get_ote_client():
+    session = requests.Session()
+    session.headers.update({"User-Agent": "Mozilla/5.0"})
+    return Client(WSDL, transport=Transport(session=session))
+
+
+def _find_all(root, tag):
+    """Hledá elementy bez ohledu na namespace."""
+    results = list(root.iter(f"{{{NS}}}{tag}"))
+    if not results:
+        results = list(root.iter(tag))
+    return results
+
+
+def soap_call_raw(action: str, body_inner: str) -> ET.Element:
+    """Přímé SOAP volání bez zeep."""
     envelope = f"""<?xml version="1.0" encoding="utf-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
                   xmlns:pub="{NS}">
@@ -97,11 +117,13 @@ def soap_call(action: str, body_inner: str) -> ET.Element:
     {body_inner}
   </soapenv:Body>
 </soapenv:Envelope>"""
+    url = "https://www.ote-cr.cz/pw-data/services/PublicDataService"
     headers = {
         "Content-Type": "text/xml; charset=utf-8",
-        "SOAPAction": f'"{NS}/{action}"',
+        "SOAPAction": "",
+        "User-Agent": "Mozilla/5.0",
     }
-    resp = requests.post(WSDL, data=envelope.encode("utf-8"), headers=headers, timeout=30)
+    resp = requests.post(url, data=envelope.encode("utf-8"), headers=headers, timeout=30)
     resp.raise_for_status()
     return ET.fromstring(resp.content)
 
@@ -112,16 +134,26 @@ def get_dam_index(start_date: str, end_date: str) -> pd.DataFrame:
       <pub:StartDate>{start_date}</pub:StartDate>
       <pub:EndDate>{end_date}</pub:EndDate>
     </pub:GetDamIndexE>"""
-    root = soap_call("GetDamIndexE", body)
+    root = soap_call_raw("GetDamIndexE", body)
     rows = []
-    for item in root.iter(f"{{{NS}}}Item"):
+    # Element se může jmenovat DamIndex nebo Item
+    for tag in ["DamIndex", "Item"]:
+        items = _find_all(root, tag)
+        if items:
+            break
+    for item in items:
+        def ft(name):
+            v = item.findtext(f"{{{NS}}}{name}")
+            if v is None:
+                v = item.findtext(name)
+            return v
         rows.append({
-            "date":         item.findtext(f"{{{NS}}}Date"),
-            "base_load":    _float(item.findtext(f"{{{NS}}}BaseLoad")),
-            "peak_load":    _float(item.findtext(f"{{{NS}}}PeakLoad")),
-            "offpeak_load": _float(item.findtext(f"{{{NS}}}OffpeakLoad")),
-            "eur_rate":     _float(item.findtext(f"{{{NS}}}EurRate")),
-            "base_volume":  _float(item.findtext(f"{{{NS}}}BaseLoadVolume")),
+            "date":         ft("Date"),
+            "base_load":    _float(ft("BaseLoad")),
+            "peak_load":    _float(ft("PeakLoad")),
+            "offpeak_load": _float(ft("OffpeakLoad")),
+            "eur_rate":     _float(ft("EurRate")),
+            "base_volume":  _float(ft("BaseLoadVolume")),
         })
     if not rows:
         return pd.DataFrame()
@@ -131,17 +163,22 @@ def get_dam_index(start_date: str, end_date: str) -> pd.DataFrame:
 
 
 def get_dam_price_period(delivery_date: str) -> pd.DataFrame:
-    """GetDamPricePeriodE — hodinové ceny pro jeden den."""
+    """GetDamPricePeriodE — 15min ceny pro jeden den."""
     body = f"""<pub:GetDamPricePeriodE>
       <pub:DeliveryDate>{delivery_date}</pub:DeliveryDate>
     </pub:GetDamPricePeriodE>"""
-    root = soap_call("GetDamPricePeriodE", body)
+    root = soap_call_raw("GetDamPricePeriodE", body)
     rows = []
-    for item in root.iter(f"{{{NS}}}Item"):
+    for item in _find_all(root, "Item"):
+        def ft(name):
+            v = item.findtext(f"{{{NS}}}{name}")
+            if v is None:
+                v = item.findtext(name)
+            return v
         rows.append({
-            "period": _int(item.findtext(f"{{{NS}}}Period")),
-            "price":  _float(item.findtext(f"{{{NS}}}Price")),
-            "volume": _float(item.findtext(f"{{{NS}}}Volume")),
+            "period": _int(ft("Period")),
+            "price":  _float(ft("Price")),
+            "volume": _float(ft("Volume")),
         })
     if not rows:
         return pd.DataFrame()
@@ -155,15 +192,20 @@ def get_imbalance(start_date: str, end_date: str) -> pd.DataFrame:
       <pub:StartDate>{start_date}</pub:StartDate>
       <pub:EndDate>{end_date}</pub:EndDate>
     </pub:GetImbalanceSettlementPeriodE>"""
-    root = soap_call("GetImbalanceSettlementPeriodE", body)
+    root = soap_call_raw("GetImbalanceSettlementPeriodE", body)
     rows = []
-    for item in root.iter(f"{{{NS}}}Item"):
+    for item in _find_all(root, "Item"):
+        def ft(name):
+            v = item.findtext(f"{{{NS}}}{name}")
+            if v is None:
+                v = item.findtext(name)
+            return v
         rows.append({
-            "date":             item.findtext(f"{{{NS}}}Date"),
-            "period":           _int(item.findtext(f"{{{NS}}}Period")),
-            "price_plus":       _float(item.findtext(f"{{{NS}}}PricePlus")),
-            "price_minus":      _float(item.findtext(f"{{{NS}}}PriceMinus")),
-            "imbalance_volume": _float(item.findtext(f"{{{NS}}}ImbalanceVolume")),
+            "date":             ft("Date"),
+            "period":           _int(ft("Period")),
+            "price_plus":       _float(ft("SettlImbalancePrice")),
+            "price_minus":      _float(ft("SettlCounterImbalancePrice")),
+            "imbalance_volume": _float(ft("SystemImbalance")),
         })
     if not rows:
         return pd.DataFrame()
