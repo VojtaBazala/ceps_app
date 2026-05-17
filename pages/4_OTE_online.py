@@ -182,7 +182,7 @@ def get_odchylky(date_from, date_to) -> pd.DataFrame:
 def load_dam(period_days: int, token: str):
     now_utc   = datetime.now(timezone.utc)
     start_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=period_days)
-    end_utc   = now_utc
+    end_utc   = now_utc.replace(hour=23, minute=0, second=0, microsecond=0) + timedelta(days=1)  # +1 den pro zítřejší DAM
     df = get_dam_prices(start_utc, end_utc, token)
     return df
 
@@ -291,13 +291,10 @@ with col_dam:
             html += f'<div class="row-item"><span class="row-name">{label}</span><span class="row-value" style="color:{color}">{v}</span></div>'
         st.markdown(html, unsafe_allow_html=True)
 
-        # Dnešní hodinový profil
+        # Hodinový profil nejnovějšího dostupného dne
         if not df_dam.empty:
-            today_str = date.today()
-            df_today  = df_dam[df_dam["date"] == today_str].copy()
-            if df_today.empty:
-                yesterday = date.today() - timedelta(days=1)
-                df_today = df_dam[df_dam["date"] == yesterday].copy()
+            latest_date = df_dam["date"].max()
+            df_today    = df_dam[df_dam["date"] == latest_date].copy()
 
             if not df_today.empty:
                 st.markdown('<div class="section-label" style="margin-top:14px">Hodinový profil</div>', unsafe_allow_html=True)
