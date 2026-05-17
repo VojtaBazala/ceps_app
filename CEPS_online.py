@@ -357,32 +357,18 @@ if not df_cena.empty:
 
 st.caption("Data: ČEPS, a.s. – Oficiální SOAP API (cepsdata.asmx)")
 
-# ── MORSE ──────────────────────────────────────────
-# Carpe diem, hora ruit – mezery mezi slovy jsou 3 mezery, mezi písmeny 1 mezera
-MORSE = "-.-. .- .-. .--. .   -.. .. . --   --..--   .... --- .-. .-   .-. ..- .. -"
-PLAIN = "Carpe diem, hora ruit"
-
-if "morse_revealed" not in st.session_state:
-    st.session_state.morse_revealed = False
-
-morse_col, btn_col, _ = st.columns([8, 1.5, 2])
-with morse_col:
-    st.markdown(
-        f'<div style="font-family:\'Courier New\',monospace;font-size:0.7rem;'
-        f'color:{SUBTEXT};letter-spacing:2px;margin-top:4px;">{MORSE}</div>',
-        unsafe_allow_html=True
-    )
-with btn_col:
-    if st.button("∿ translate", key="morse_btn", use_container_width=True):
-        st.session_state.morse_revealed = not st.session_state.morse_revealed
-        st.rerun()
-
-if st.session_state.morse_revealed:
-    st.markdown(
-        f'<div style="font-family:\'Courier New\',monospace;font-size:0.75rem;'
-        f'color:#ffd740;letter-spacing:2px;font-style:italic;">{PLAIN}</div>',
-        unsafe_allow_html=True
-    )
+# ── CITÁT ──────────────────────────────────────────
+st.markdown(
+    '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&display=swap" rel="stylesheet">',
+    unsafe_allow_html=True
+)
+st.markdown(
+    '<div style="font-family:\'Cinzel\',serif;font-size:0.85rem;color:#8899bb;'
+    'text-align:right;letter-spacing:2px;margin-top:8px;font-style:normal;">'
+    'Carpe diem, hora ruit'
+    '</div>',
+    unsafe_allow_html=True
+)
 
 if st.session_state.auto_refresh:
     time.sleep(1)
