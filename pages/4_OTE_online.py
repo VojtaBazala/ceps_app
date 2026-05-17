@@ -374,6 +374,7 @@ with col_odch_col:
         if df_valid.empty:
             df_valid = df_odch.copy()
 
+        # Poslední platná hodnota
         last = df_valid.iloc[-1]
         cas_val      = last["cas"]
         interval_str = last.get("interval", "—") or "—"
@@ -427,49 +428,50 @@ with col_odch_col:
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ── GRAF: BASE LOAD HISTORIE ──────────────────────
-if not df_index.empty:
-    fig_base = go.Figure()
-    fig_base.add_trace(go.Scatter(
-        x=df_index["date"], y=df_index["base_load"],
-        name="Base load", line=dict(color="#00e676", width=1.5),
-        fill="tozeroy", fillcolor="rgba(0,230,118,0.07)",
-        hovertemplate="%{x|%d.%m.%Y}<br><b>%{y:.2f} EUR/MWh</b>",
-    ))
-    layout_base = base_layout("DAM Base load [EUR/MWh]", "#00e676", height=280)
-    layout_base["xaxis"]["rangeselector"] = dict(
-        buttons=range_buttons(),
-        bgcolor=PLOT_BG, activecolor=BORDER,
-        font=dict(color=LEG_COL, size=11, family="Courier New"),
-    )
-    layout_base["xaxis"]["rangeslider"] = dict(visible=False)
-    fig_base.update_layout(**layout_base)
-    st.plotly_chart(fig_base, use_container_width=True)
+# ── GRAFY VEDLE SEBE ──────────────────────────────
+gcol_dam, _gg, gcol_odch = st.columns([3, 0.2, 3])
 
-# ── GRAF: ODCHYLKY HISTORIE ───────────────────────
-if not df_odch.empty and odh_col:
-    df_plot = df_odch[df_odch["cas"].notna()].copy()
-    if df_plot.empty:
-        df_plot = df_odch.copy()
-
-    if not df_plot.empty:
-        fig_odch = go.Figure()
-        fig_odch.add_trace(go.Scatter(
-            x=df_plot["cas"], y=df_plot[odh_col],
-            name="Odh. cena odchylky", line=dict(color="#ffd740", width=1.0),
-            hovertemplate="%{x|%d.%m %H:%M}<br><b>%{y:.2f} Kč/MWh</b>",
+with gcol_dam:
+    if not df_index.empty:
+        fig_base = go.Figure()
+        fig_base.add_trace(go.Scatter(
+            x=df_index["date"], y=df_index["base_load"],
+            name="Base load", line=dict(color="#00e676", width=1.5),
+            fill="tozeroy", fillcolor="rgba(0,230,118,0.07)",
+            hovertemplate="%{x|%d.%m.%Y}<br><b>%{y:.2f} EUR/MWh</b>",
         ))
-        # Nulová linie
-        fig_odch.add_hline(y=0, line=dict(color=BORDER, width=1, dash="dot"))
-        layout_odch = base_layout("Odhadovaná cena odchylky [Kč/MWh]", "#ffd740", height=280)
-        layout_odch["xaxis"]["rangeselector"] = dict(
+        layout_base = base_layout("DAM Base load [EUR/MWh]", "#00e676", height=280)
+        layout_base["xaxis"]["rangeselector"] = dict(
             buttons=range_buttons(),
             bgcolor=PLOT_BG, activecolor=BORDER,
             font=dict(color=LEG_COL, size=11, family="Courier New"),
         )
-        layout_odch["xaxis"]["rangeslider"] = dict(visible=False)
-        fig_odch.update_layout(**layout_odch)
-        st.plotly_chart(fig_odch, use_container_width=True)
+        layout_base["xaxis"]["rangeslider"] = dict(visible=False)
+        fig_base.update_layout(**layout_base)
+        st.plotly_chart(fig_base, use_container_width=True)
+
+with gcol_odch:
+    if not df_odch.empty and odh_col:
+        df_plot = df_odch[df_odch["cas"].notna()].copy()
+        if df_plot.empty:
+            df_plot = df_odch.copy()
+        if not df_plot.empty:
+            fig_odch = go.Figure()
+            fig_odch.add_trace(go.Scatter(
+                x=df_plot["cas"], y=df_plot[odh_col],
+                name="Odh. cena odchylky", line=dict(color="#ffd740", width=1.0),
+                hovertemplate="%{x|%d.%m %H:%M}<br><b>%{y:.2f} Kč/MWh</b>",
+            ))
+            fig_odch.add_hline(y=0, line=dict(color=BORDER, width=1, dash="dot"))
+            layout_odch = base_layout("Odhadovaná cena odchylky [Kč/MWh]", "#ffd740", height=280)
+            layout_odch["xaxis"]["rangeselector"] = dict(
+                buttons=range_buttons(),
+                bgcolor=PLOT_BG, activecolor=BORDER,
+                font=dict(color=LEG_COL, size=11, family="Courier New"),
+            )
+            layout_odch["xaxis"]["rangeslider"] = dict(visible=False)
+            fig_odch.update_layout(**layout_odch)
+            st.plotly_chart(fig_odch, use_container_width=True)
 
 # ── FOOTER ─────────────────────────────────────────
 st.markdown(
