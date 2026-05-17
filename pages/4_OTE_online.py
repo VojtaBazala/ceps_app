@@ -67,7 +67,10 @@ st.markdown(f"""
   .row-item:last-child {{ border-bottom:none; }}
   .row-name  {{ font-size:0.7rem; color:{SUBTEXT}; letter-spacing:1px; }}
   .row-value {{ font-size:0.95rem; font-weight:700; }}
-  .val-big {{ font-family:'Courier New',monospace; font-size:2rem; font-weight:700; line-height:1.1; color:#00e676; margin-bottom:4px; }}
+  .val-big {{
+    font-family:'Courier New',monospace; font-size:2rem; font-weight:700;
+    line-height:1.1; color:#00e676; margin-bottom:4px;
+  }}
   .section-label {{
     font-size:0.62rem; color:{SUBTEXT}; text-transform:uppercase;
     letter-spacing:1px; margin-top:12px; margin-bottom:4px; font-family:'Courier New',monospace;
@@ -77,18 +80,22 @@ st.markdown(f"""
     color:{SUBTEXT} !important; font-size:0.8rem !important;
     padding:4px 10px !important; font-family:'Courier New',monospace !important;
   }}
-  div[data-testid="stButton"] button:hover {{ border-color:#00c8ff !important; color:#00c8ff !important; }}
+  div[data-testid="stButton"] button:hover {{
+    border-color:#00c8ff !important; color:#00c8ff !important;
+  }}
 </style>
 """, unsafe_allow_html=True)
 
-TZ          = pytz.timezone("Europe/Prague")
-CEPS_WSDL   = "https://vip-prod-service-00-azapp.azurewebsites.net/_layouts/cepsdata.asmx?WSDL"
-ENTSOE_URL  = "https://web-api.tp.entsoe.eu/api"
-CZ_ZONE     = "10YCZ-CEPS-----N"
+TZ         = pytz.timezone("Europe/Prague")
+CEPS_WSDL  = "https://vip-prod-service-00-azapp.azurewebsites.net/_layouts/cepsdata.asmx?WSDL"
+ENTSOE_URL = "https://web-api.tp.entsoe.eu/api"
+CZ_ZONE    = "10YCZ-CEPS-----N"
+
 
 # ── ENTSO-E: DAM ceny ─────────────────────────────
 def entsoe_time(dt: datetime) -> str:
     return dt.strftime("%Y%m%d%H%M")
+
 
 def get_dam_prices(start_utc: datetime, end_utc: datetime, token: str) -> pd.DataFrame:
     params = {
@@ -135,17 +142,18 @@ def get_dam_prices(start_utc: datetime, end_utc: datetime, token: str) -> pd.Dat
     df["hour"] = df["datetime_cet"].dt.hour
     return df
 
+
 def compute_dam_index(df: pd.DataFrame) -> pd.DataFrame:
-    """Spočítá base/peak/offpeak per den."""
     if df.empty:
         return pd.DataFrame()
     rows = []
     for d, grp in df.groupby("date"):
-        base   = grp["price_eur_mwh"].mean()
-        peak   = grp[grp["hour"].between(8, 19)]["price_eur_mwh"].mean()
-        offpk  = grp[~grp["hour"].between(8, 19)]["price_eur_mwh"].mean()
+        base  = grp["price_eur_mwh"].mean()
+        peak  = grp[grp["hour"].between(8, 19)]["price_eur_mwh"].mean()
+        offpk = grp[~grp["hour"].between(8, 19)]["price_eur_mwh"].mean()
         rows.append({"date": d, "base_load": base, "peak_load": peak, "offpeak_load": offpk})
     return pd.DataFrame(rows)
+
 
 # ── ČEPS: odhadovaná cena odchylky ────────────────
 @st.cache_resource
@@ -153,7 +161,8 @@ def get_ceps_client():
     session = requests.Session()
     return Client(CEPS_WSDL, transport=Transport(session=session))
 
-def ceps_xml_na_df(result):
+
+def ceps_xml_na_df(result) -> pd.DataFrame:
     NS_CEPS = "https://www.ceps.cz/CepsData/StructuredData/1.0"
     items = result.findall(f"{{{NS_CEPS}}}data/{{{NS_CEPS}}}item")
     if not items:
@@ -169,30 +178,33 @@ def ceps_xml_na_df(result):
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
-    df["cas"] = pd.to_datetime(df["cas"], utc=True).dt.tz_convert("Europe/Prague")
+    df["cas"] = pd.to_datetime(df["cas"], utc=True, errors="coerce").dt.tz_convert("Europe/Prague")
     return df
+
 
 def get_odchylky(date_from, date_to) -> pd.DataFrame:
     client = get_ceps_client()
     result = client.service.OdhadovanaCenaOdchylky(dateFrom=date_from, dateTo=date_to)
     return ceps_xml_na_df(result)
 
-# ── NAČTENÍ DAT ────────────────────────────────────
+
+# ── CACHE ──────────────────────────────────────────
 @st.cache_data(ttl=300)
-def load_dam(period_days: int, token: str):
+def load_dam(period_days: int, token: str) -> pd.DataFrame:
     now_utc   = datetime.now(timezone.utc)
     start_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=period_days)
-    end_utc   = now_utc.replace(hour=23, minute=0, second=0, microsecond=0) + timedelta(days=1)  # +1 den pro zítřejší DAM
-    df = get_dam_prices(start_utc, end_utc, token)
-    return df
+    end_utc   = now_utc.replace(hour=23, minute=0, second=0, microsecond=0) + timedelta(days=1)
+    return get_dam_prices(start_utc, end_utc, token)
+
 
 @st.cache_data(ttl=55)
-def load_odchylky(period_days: int):
+def load_odchylky(period_days: int) -> pd.DataFrame:
     now_local = datetime.now(TZ).replace(tzinfo=None)
     pulnoc    = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
-    date_from = pulnoc - timedelta(days=period_days - 1)
+    date_from = pulnoc - timedelta(days=min(period_days - 1, 29))
     date_to   = now_local
     return get_odchylky(date_from, date_to)
+
 
 def base_layout(title, color="#00c8ff"):
     return dict(
@@ -205,6 +217,7 @@ def base_layout(title, color="#00c8ff"):
         yaxis=dict(gridcolor=GRID_COL, showgrid=True, color=LEG_COL),
         margin=dict(l=50, r=10, t=40, b=30), height=240,
     )
+
 
 # ── HLAVIČKA ───────────────────────────────────────
 header_l, header_r = st.columns([7, 3])
@@ -231,11 +244,11 @@ with ctrl_r:
     sel_col, _ = st.columns([2, 6])
     with sel_col:
         obdobi_label = st.selectbox("Období grafů", list(OBDOBI.keys()), index=1, label_visibility="collapsed")
-period_days = OBDOBI[obdobi_label]
 
+period_days = OBDOBI[obdobi_label]
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ── ENTSOE TOKEN ───────────────────────────────────
+# ── TOKEN ──────────────────────────────────────────
 token = os.environ.get("ENTSOE_API_TOKEN", "")
 if not token:
     st.error("❌ ENTSOE_API_TOKEN není nastaven v Heroku config vars!")
@@ -243,20 +256,20 @@ if not token:
 
 # ── DATA ───────────────────────────────────────────
 with st.spinner("Načítám data..."):
+    df_dam   = pd.DataFrame()
+    df_index = pd.DataFrame()
+    df_odch  = pd.DataFrame()
+
     try:
         df_dam   = load_dam(period_days, token)
         df_index = compute_dam_index(df_dam)
-        last_str = datetime.now(TZ).strftime("%d.%m.%Y %H:%M:%S")
     except Exception as e:
         st.warning(f"⚠️ DAM data (ENTSO-E): {e}")
-        df_dam   = pd.DataFrame()
-        df_index = pd.DataFrame()
 
     try:
-        df_odch = load_odchylky(min(period_days, 30))  # max 30 dní odchylek najednou
+        df_odch = load_odchylky(period_days)
     except Exception as e:
         st.warning(f"⚠️ Odchylky (ČEPS): {e}")
-        df_odch = pd.DataFrame()
 
 tz_label = "SELČ" if bool(datetime.now(TZ).dst()) else "SEČ"
 st.markdown(
@@ -266,9 +279,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ── SLOUPCE: DAM + ODCHYLKY ────────────────────────
-col_dam, _g, col_odch = st.columns([3, 0.2, 3])
+# ── SLOUPCE ────────────────────────────────────────
+col_dam, _g, col_odch_col = st.columns([3, 0.2, 3])
 
+# ── DAM ────────────────────────────────────────────
 with col_dam:
     st.markdown('<div class="col-header dam">⚡ DAM – Denní trh elektřiny</div>', unsafe_allow_html=True)
 
@@ -284,18 +298,21 @@ with col_dam:
 
         html = ""
         for label, val, color in [
-            ("Peak load (h8–h19)",    peak,  "#ffd740"),
-            ("Offpeak load",          offpk, "#13b8f0"),
+            ("Peak load (h8–h19)", peak,  "#ffd740"),
+            ("Offpeak load",       offpk, "#13b8f0"),
         ]:
             v = f"{val:.2f} EUR/MWh" if val is not None else "—"
-            html += f'<div class="row-item"><span class="row-name">{label}</span><span class="row-value" style="color:{color}">{v}</span></div>'
+            html += (
+                f'<div class="row-item">'
+                f'<span class="row-name">{label}</span>'
+                f'<span class="row-value" style="color:{color}">{v}</span>'
+                f'</div>'
+            )
         st.markdown(html, unsafe_allow_html=True)
 
-        # Hodinový profil nejnovějšího dostupného dne
         if not df_dam.empty:
             latest_date = df_dam["date"].max()
             df_today    = df_dam[df_dam["date"] == latest_date].copy()
-
             if not df_today.empty:
                 st.markdown('<div class="section-label" style="margin-top:14px">Hodinový profil</div>', unsafe_allow_html=True)
                 df_h = df_today.groupby("hour", as_index=False)["price_eur_mwh"].mean()
@@ -316,35 +333,38 @@ with col_dam:
     else:
         st.warning("DAM data nejsou dostupná")
 
-with col_odch:
+# ── ODCHYLKY ───────────────────────────────────────
+with col_odch_col:
     st.markdown('<div class="col-header odch">📊 Odhadovaná cena odchylky</div>', unsafe_allow_html=True)
 
-    if not df_odch.empty:
-        # Najdi poslední řádek s platným časem
-        df_odch_valid = df_odch.dropna(subset=["cas"])
-        if df_odch_valid.empty:
-            st.warning("Data odchylek nejsou dostupná")
-        else:
-            last = df_odch_valid.iloc[-1]
-            cas_str = pd.Timestamp(last["cas"]).strftime("%d.%m. %H:%M")
+    val_cols = [c for c in df_odch.columns if c != "cas"] if not df_odch.empty else []
+    df_odch_valid = df_odch.dropna(subset=["cas"]) if not df_odch.empty else pd.DataFrame()
 
-            # Hodnoty - zjisti jaké sloupce jsou dostupné
-            val_cols = [c for c in df_odch.columns if c != "cas"]
-            first_val = last[val_cols[0]] if val_cols else None
+    if not df_odch_valid.empty and val_cols:
+        last    = df_odch_valid.iloc[-1]
+        cas_str = pd.Timestamp(last["cas"]).strftime("%d.%m. %H:%M")
+        first_val = last[val_cols[0]] if val_cols else None
 
-            st.markdown(f'<div class="section-label">Aktuální ({cas_str})</div>', unsafe_allow_html=True)
-            if first_val is not None:
-                color_v = "#ff3d57" if first_val > 3000 else "#ffd740" if first_val > 1500 else "#00e676"
-                st.markdown(f'<div class="val-big" style="color:{color_v}">{first_val:.2f} Kč/MWh</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="section-label">Aktuální ({cas_str})</div>', unsafe_allow_html=True)
+        if first_val is not None:
+            color_v = "#ff3d57" if first_val > 3000 else "#ffd740" if first_val > 1500 else "#00e676"
+            st.markdown(
+                f'<div class="val-big" style="color:{color_v}">{first_val:.2f} Kč/MWh</div>',
+                unsafe_allow_html=True
+            )
 
-            # Ostatní sloupce
-            html = ""
-            for col in val_cols[1:]:
-                v = last[col]
-                if v is not None:
-                    html += f'<div class="row-item"><span class="row-name">{col}</span><span class="row-value" style="color:{TEXT}">{v:.2f}</span></div>'
-            if html:
-                st.markdown(html, unsafe_allow_html=True)
+        html = ""
+        for col in val_cols[1:]:
+            v = last[col]
+            if v is not None:
+                html += (
+                    f'<div class="row-item">'
+                    f'<span class="row-name">{col}</span>'
+                    f'<span class="row-value" style="color:{TEXT}">{v:.2f}</span>'
+                    f'</div>'
+                )
+        if html:
+            st.markdown(html, unsafe_allow_html=True)
     else:
         st.warning("Data odchylek nejsou dostupná")
 
@@ -375,23 +395,19 @@ if not df_index.empty:
     st.plotly_chart(fig_base, use_container_width=True)
 
 # ── GRAF: ODCHYLKY HISTORIE ───────────────────────
-if not df_odch.empty:
-    val_cols = [c for c in df_odch.columns if c != "cas"]
-    df_odch_valid = df_odch.dropna(subset=["cas"])
-    if not df_odch_valid.empty and len(val_cols) > 0:
-    if not df_odch_valid.empty and len(val_cols) > 0:
-        fig_odch = go.Figure()
-        colors = ["#ffd740", "#ff3d57", "#13b8f0", "#00e676"]
-        for i, col in enumerate(val_cols[:3]):
-            fig_odch.add_trace(go.Scatter(
-                x=df_odch_valid["cas"], y=df_odch_valid[col],
-                name=col, line=dict(color=colors[i % len(colors)], width=1.0),
-                hovertemplate=f"%{{x|%d.%m %H:%M}}<br><b>%{{y:.2f}}</b>",
-            ))
-        layout_odch = base_layout(f"Odhadovaná cena odchylky – {obdobi_label}", "#ffd740")
-        layout_odch["height"] = 260
-        fig_odch.update_layout(**layout_odch)
-        st.plotly_chart(fig_odch, use_container_width=True)
+if not df_odch_valid.empty and val_cols:
+    fig_odch = go.Figure()
+    colors = ["#ffd740", "#ff3d57", "#13b8f0", "#00e676"]
+    for i, col in enumerate(val_cols[:3]):
+        fig_odch.add_trace(go.Scatter(
+            x=df_odch_valid["cas"], y=df_odch_valid[col],
+            name=col, line=dict(color=colors[i % len(colors)], width=1.0),
+            hovertemplate=f"%{{x|%d.%m %H:%M}}<br><b>%{{y:.2f}}</b>",
+        ))
+    layout_odch = base_layout(f"Odhadovaná cena odchylky – {obdobi_label}", "#ffd740")
+    layout_odch["height"] = 260
+    fig_odch.update_layout(**layout_odch)
+    st.plotly_chart(fig_odch, use_container_width=True)
 
 # ── FOOTER ─────────────────────────────────────────
 st.markdown(
