@@ -323,26 +323,31 @@ with col_odch:
     st.markdown('<div class="col-header odch">📊 Odhadovaná cena odchylky</div>', unsafe_allow_html=True)
 
     if not df_odch.empty:
-        last = df_odch.iloc[-1]
-        cas_str = pd.Timestamp(last["cas"]).strftime("%d.%m. %H:%M")
+        # Najdi poslední řádek s platným časem
+        df_odch_valid = df_odch.dropna(subset=["cas"])
+        if df_odch_valid.empty:
+            st.warning("Data odchylek nejsou dostupná")
+        else:
+            last = df_odch_valid.iloc[-1]
+            cas_str = pd.Timestamp(last["cas"]).strftime("%d.%m. %H:%M")
 
-        # Hodnoty - zjisti jaké sloupce jsou dostupné
-        val_cols = [c for c in df_odch.columns if c != "cas"]
-        first_val = last[val_cols[0]] if val_cols else None
+            # Hodnoty - zjisti jaké sloupce jsou dostupné
+            val_cols = [c for c in df_odch.columns if c != "cas"]
+            first_val = last[val_cols[0]] if val_cols else None
 
-        st.markdown(f'<div class="section-label">Aktuální ({cas_str})</div>', unsafe_allow_html=True)
-        if first_val is not None:
-            color_v = "#ff3d57" if first_val > 3000 else "#ffd740" if first_val > 1500 else "#00e676"
-            st.markdown(f'<div class="val-big" style="color:{color_v}">{first_val:.2f} Kč/MWh</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="section-label">Aktuální ({cas_str})</div>', unsafe_allow_html=True)
+            if first_val is not None:
+                color_v = "#ff3d57" if first_val > 3000 else "#ffd740" if first_val > 1500 else "#00e676"
+                st.markdown(f'<div class="val-big" style="color:{color_v}">{first_val:.2f} Kč/MWh</div>', unsafe_allow_html=True)
 
-        # Ostatní sloupce
-        html = ""
-        for col in val_cols[1:]:
-            v = last[col]
-            if v is not None:
-                html += f'<div class="row-item"><span class="row-name">{col}</span><span class="row-value" style="color:{TEXT}">{v:.2f}</span></div>'
-        if html:
-            st.markdown(html, unsafe_allow_html=True)
+            # Ostatní sloupce
+            html = ""
+            for col in val_cols[1:]:
+                v = last[col]
+                if v is not None:
+                    html += f'<div class="row-item"><span class="row-name">{col}</span><span class="row-value" style="color:{TEXT}">{v:.2f}</span></div>'
+            if html:
+                st.markdown(html, unsafe_allow_html=True)
     else:
         st.warning("Data odchylek nejsou dostupná")
 
