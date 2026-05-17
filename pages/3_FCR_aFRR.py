@@ -193,9 +193,9 @@ if not df_afrr.empty:
 
     COL_CFG_AFRR = {
         "Blok":                        st.column_config.TextColumn(width="small"),
-        "CZ Průměr [EUR/MW/h]":        st.column_config.NumberColumn(width="small",  format="%.2f"),
+        "CZ Průměr [EUR/MW/h]":        st.column_config.NumberColumn(width="medium", format="%.2f"),
         "CZ Marginální [EUR/MW/h]":    st.column_config.NumberColumn(width="medium", format="%.2f"),
-        "CZ Import(-)/Export(+) [MW]": st.column_config.NumberColumn(width="medium", format="%.0f"),
+        "CZ Import(-)/Export(+) [MW]": st.column_config.NumberColumn(width="small",  format="%.0f"),
     }
 
     with tbl_pos:
