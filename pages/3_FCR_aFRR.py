@@ -76,6 +76,13 @@ st.markdown(f"""
     padding:4px 10px !important; font-family:'Courier New',monospace !important;
   }}
   div[data-testid="stButton"] button:hover {{ border-color:#00c8ff !important; color:#00c8ff !important; }}
+  /* Zúžení prvního sloupce tabulek */
+  div[data-testid="stDataFrame"] th:first-child,
+  div[data-testid="stDataFrame"] td:first-child {{
+    max-width: 60px !important;
+    min-width: 60px !important;
+    width: 60px !important;
+  }}
 </style>
 """, unsafe_allow_html=True)
 
