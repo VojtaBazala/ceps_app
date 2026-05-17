@@ -342,19 +342,23 @@ with col_dam:
             latest_date = df_dam["date"].max()
             df_today    = df_dam[df_dam["date"] == latest_date].copy()
             if not df_today.empty:
-                st.markdown('<div class="section-label" style="margin-top:14px">Hodinový profil</div>', unsafe_allow_html=True)
                 df_h = df_today.groupby("hour", as_index=False)["price_eur_mwh"].mean()
                 fig_h = go.Figure()
-                fig_h.add_trace(go.Scatter(
+                fig_h.add_trace(go.Bar(
                     x=df_h["hour"], y=df_h["price_eur_mwh"],
-                    name="EUR/MWh", line=dict(color="#00e676", width=1.5),
-                    fill="tozeroy", fillcolor="rgba(0,230,118,0.07)",
+                    name="EUR/MWh",
+                    marker_color="#00e676",
+                    text=[f"{v:.0f}" for v in df_h["price_eur_mwh"]],
+                    textposition="outside",
+                    textfont=dict(size=9, color="#00e676", family="Courier New"),
                     hovertemplate="h%{x}<br><b>%{y:.2f} EUR/MWh</b>",
                 ))
-                layout_h = base_layout("Hodinové ceny DAM [EUR/MWh]", "#00e676", height=180)
+                layout_h = base_layout("Hodinové ceny DAM [EUR/MWh]", "#00e676", height=200)
                 layout_h["xaxis"]["tickmode"] = "linear"
                 layout_h["xaxis"]["tick0"]    = 0
-                layout_h["xaxis"]["dtick"]    = 2
+                layout_h["xaxis"]["dtick"]    = 1
+                layout_h["bargap"] = 0.1
+                layout_h["uniformtext"] = dict(mode="hide", minsize=7)
                 fig_h.update_layout(**layout_h)
                 st.plotly_chart(fig_h, use_container_width=True)
     else:
@@ -382,14 +386,7 @@ with col_odch_col:
         else:
             date_str = "—"
 
-        first_val = last[odh_col]
-        color_v   = "#ff3d57" if first_val < 0 else "#ffd740" if first_val > 3000 else "#00e676"
-
-        st.markdown(f'<div class="section-label">{date_str} &nbsp; {interval_str}</div>', unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="val-big" style="color:{color_v}">{first_val:.2f} Kč/MWh</div>',
-            unsafe_allow_html=True
-        )
+        st.markdown(f'<div class="section-label">{date_str}</div>', unsafe_allow_html=True)
 
         # Tabulka posledních 10 čtvrthodin
         st.markdown('<div class="section-label" style="margin-top:14px">Posledních 10 čtvrthodin</div>', unsafe_allow_html=True)
@@ -444,6 +441,7 @@ with gcol_dam:
             buttons=range_buttons(),
             bgcolor=PLOT_BG, activecolor=BORDER,
             font=dict(color=LEG_COL, size=11, family="Courier New"),
+            x=1, xanchor="right", y=1.15, yanchor="top",
         )
         layout_base["xaxis"]["rangeslider"] = dict(visible=False)
         fig_base.update_layout(**layout_base)
@@ -464,9 +462,13 @@ with gcol_odch:
             fig_odch.add_hline(y=0, line=dict(color=BORDER, width=1, dash="dot"))
             layout_odch = base_layout("Odhadovaná cena odchylky [Kč/MWh]", "#ffd740", height=280)
             layout_odch["xaxis"]["rangeselector"] = dict(
-                buttons=range_buttons(),
+                buttons=[
+                    dict(count=7,  label="1T", step="day", stepmode="backward"),
+                    dict(count=30, label="1M", step="day", stepmode="backward"),
+                ],
                 bgcolor=PLOT_BG, activecolor=BORDER,
                 font=dict(color=LEG_COL, size=11, family="Courier New"),
+                x=1, xanchor="right", y=1.15, yanchor="top",
             )
             layout_odch["xaxis"]["rangeslider"] = dict(visible=False)
             fig_odch.update_layout(**layout_odch)
