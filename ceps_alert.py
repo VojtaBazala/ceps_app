@@ -1,241 +1,275 @@
-name: ČEPS Alerts
+"""
+ceps_alert.py
+Kontroluje ČEPS data a posílá email alertů při překročení thresholdů.
+Spouštěno přes GitHub Actions každých 5 minut.
 
-on:
-  schedule:
-    - cron: '0 5 * * 1-7'
-    - cron: '5 5 * * 1-7'
-    - cron: '10 5 * * 1-7'
-    - cron: '15 5 * * 1-7'
-    - cron: '20 5 * * 1-7'
-    - cron: '25 5 * * 1-7'
-    - cron: '30 5 * * 1-7'
-    - cron: '35 5 * * 1-7'
-    - cron: '40 5 * * 1-7'
-    - cron: '45 5 * * 1-7'
-    - cron: '50 5 * * 1-7'
-    - cron: '55 5 * * 1-7'
-    - cron: '0 6 * * 1-7'
-    - cron: '5 6 * * 1-7'
-    - cron: '10 6 * * 1-7'
-    - cron: '15 6 * * 1-7'
-    - cron: '20 6 * * 1-7'
-    - cron: '25 6 * * 1-7'
-    - cron: '30 6 * * 1-7'
-    - cron: '35 6 * * 1-7'
-    - cron: '40 6 * * 1-7'
-    - cron: '45 6 * * 1-7'
-    - cron: '50 6 * * 1-7'
-    - cron: '55 6 * * 1-7'
-    - cron: '0 7 * * 1-7'
-    - cron: '5 7 * * 1-7'
-    - cron: '10 7 * * 1-7'
-    - cron: '15 7 * * 1-7'
-    - cron: '20 7 * * 1-7'
-    - cron: '25 7 * * 1-7'
-    - cron: '30 7 * * 1-7'
-    - cron: '35 7 * * 1-7'
-    - cron: '40 7 * * 1-7'
-    - cron: '45 7 * * 1-7'
-    - cron: '50 7 * * 1-7'
-    - cron: '55 7 * * 1-7'
-    - cron: '0 8 * * 1-7'
-    - cron: '5 8 * * 1-7'
-    - cron: '10 8 * * 1-7'
-    - cron: '15 8 * * 1-7'
-    - cron: '20 8 * * 1-7'
-    - cron: '25 8 * * 1-7'
-    - cron: '30 8 * * 1-7'
-    - cron: '35 8 * * 1-7'
-    - cron: '40 8 * * 1-7'
-    - cron: '45 8 * * 1-7'
-    - cron: '50 8 * * 1-7'
-    - cron: '55 8 * * 1-7'
-    - cron: '0 9 * * 1-7'
-    - cron: '5 9 * * 1-7'
-    - cron: '10 9 * * 1-7'
-    - cron: '15 9 * * 1-7'
-    - cron: '20 9 * * 1-7'
-    - cron: '25 9 * * 1-7'
-    - cron: '30 9 * * 1-7'
-    - cron: '35 9 * * 1-7'
-    - cron: '40 9 * * 1-7'
-    - cron: '45 9 * * 1-7'
-    - cron: '50 9 * * 1-7'
-    - cron: '55 9 * * 1-7'
-    - cron: '0 10 * * 1-7'
-    - cron: '5 10 * * 1-7'
-    - cron: '10 10 * * 1-7'
-    - cron: '15 10 * * 1-7'
-    - cron: '20 10 * * 1-7'
-    - cron: '25 10 * * 1-7'
-    - cron: '30 10 * * 1-7'
-    - cron: '35 10 * * 1-7'
-    - cron: '40 10 * * 1-7'
-    - cron: '45 10 * * 1-7'
-    - cron: '50 10 * * 1-7'
-    - cron: '55 10 * * 1-7'
-    - cron: '0 11 * * 1-7'
-    - cron: '5 11 * * 1-7'
-    - cron: '10 11 * * 1-7'
-    - cron: '15 11 * * 1-7'
-    - cron: '20 11 * * 1-7'
-    - cron: '25 11 * * 1-7'
-    - cron: '30 11 * * 1-7'
-    - cron: '35 11 * * 1-7'
-    - cron: '40 11 * * 1-7'
-    - cron: '45 11 * * 1-7'
-    - cron: '50 11 * * 1-7'
-    - cron: '55 11 * * 1-7'
-    - cron: '0 12 * * 1-7'
-    - cron: '5 12 * * 1-7'
-    - cron: '10 12 * * 1-7'
-    - cron: '15 12 * * 1-7'
-    - cron: '20 12 * * 1-7'
-    - cron: '25 12 * * 1-7'
-    - cron: '30 12 * * 1-7'
-    - cron: '35 12 * * 1-7'
-    - cron: '40 12 * * 1-7'
-    - cron: '45 12 * * 1-7'
-    - cron: '50 12 * * 1-7'
-    - cron: '55 12 * * 1-7'
-    - cron: '0 13 * * 1-7'
-    - cron: '5 13 * * 1-7'
-    - cron: '10 13 * * 1-7'
-    - cron: '15 13 * * 1-7'
-    - cron: '20 13 * * 1-7'
-    - cron: '25 13 * * 1-7'
-    - cron: '30 13 * * 1-7'
-    - cron: '35 13 * * 1-7'
-    - cron: '40 13 * * 1-7'
-    - cron: '45 13 * * 1-7'
-    - cron: '50 13 * * 1-7'
-    - cron: '55 13 * * 1-7'
-    - cron: '0 14 * * 1-7'
-    - cron: '5 14 * * 1-7'
-    - cron: '10 14 * * 1-7'
-    - cron: '15 14 * * 1-7'
-    - cron: '20 14 * * 1-7'
-    - cron: '25 14 * * 1-7'
-    - cron: '30 14 * * 1-7'
-    - cron: '35 14 * * 1-7'
-    - cron: '40 14 * * 1-7'
-    - cron: '45 14 * * 1-7'
-    - cron: '50 14 * * 1-7'
-    - cron: '55 14 * * 1-7'
-    - cron: '0 15 * * 1-7'
-    - cron: '5 15 * * 1-7'
-    - cron: '10 15 * * 1-7'
-    - cron: '15 15 * * 1-7'
-    - cron: '20 15 * * 1-7'
-    - cron: '25 15 * * 1-7'
-    - cron: '30 15 * * 1-7'
-    - cron: '35 15 * * 1-7'
-    - cron: '40 15 * * 1-7'
-    - cron: '45 15 * * 1-7'
-    - cron: '50 15 * * 1-7'
-    - cron: '55 15 * * 1-7'
-    - cron: '0 16 * * 1-7'
-    - cron: '5 16 * * 1-7'
-    - cron: '10 16 * * 1-7'
-    - cron: '15 16 * * 1-7'
-    - cron: '20 16 * * 1-7'
-    - cron: '25 16 * * 1-7'
-    - cron: '30 16 * * 1-7'
-    - cron: '35 16 * * 1-7'
-    - cron: '40 16 * * 1-7'
-    - cron: '45 16 * * 1-7'
-    - cron: '50 16 * * 1-7'
-    - cron: '55 16 * * 1-7'
-    - cron: '0 17 * * 1-7'
-    - cron: '5 17 * * 1-7'
-    - cron: '10 17 * * 1-7'
-    - cron: '15 17 * * 1-7'
-    - cron: '20 17 * * 1-7'
-    - cron: '25 17 * * 1-7'
-    - cron: '30 17 * * 1-7'
-    - cron: '35 17 * * 1-7'
-    - cron: '40 17 * * 1-7'
-    - cron: '45 17 * * 1-7'
-    - cron: '50 17 * * 1-7'
-    - cron: '55 17 * * 1-7'
-    - cron: '0 18 * * 1-7'
-    - cron: '5 18 * * 1-7'
-    - cron: '10 18 * * 1-7'
-    - cron: '15 18 * * 1-7'
-    - cron: '20 18 * * 1-7'
-    - cron: '25 18 * * 1-7'
-    - cron: '30 18 * * 1-7'
-    - cron: '35 18 * * 1-7'
-    - cron: '40 18 * * 1-7'
-    - cron: '45 18 * * 1-7'
-    - cron: '50 18 * * 1-7'
-    - cron: '55 18 * * 1-7'
-    - cron: '0 19 * * 1-7'
-    - cron: '5 19 * * 1-7'
-    - cron: '10 19 * * 1-7'
-    - cron: '15 19 * * 1-7'
-    - cron: '20 19 * * 1-7'
-    - cron: '25 19 * * 1-7'
-    - cron: '30 19 * * 1-7'
-    - cron: '35 19 * * 1-7'
-    - cron: '40 19 * * 1-7'
-    - cron: '45 19 * * 1-7'
-    - cron: '50 19 * * 1-7'
-    - cron: '55 19 * * 1-7'
-    - cron: '0 20 * * 1-7'
-    - cron: '5 20 * * 1-7'
-    - cron: '10 20 * * 1-7'
-    - cron: '15 20 * * 1-7'
-    - cron: '20 20 * * 1-7'
-    - cron: '25 20 * * 1-7'
-    - cron: '30 20 * * 1-7'
-    - cron: '35 20 * * 1-7'
-    - cron: '40 20 * * 1-7'
-    - cron: '45 20 * * 1-7'
-    - cron: '50 20 * * 1-7'
-    - cron: '55 20 * * 1-7'
-    - cron: '0 21 * * 1-7'
-    - cron: '5 21 * * 1-7'
-    - cron: '10 21 * * 1-7'
-    - cron: '15 21 * * 1-7'
-    - cron: '20 21 * * 1-7'
-    - cron: '25 21 * * 1-7'
-    - cron: '30 21 * * 1-7'
-    - cron: '35 21 * * 1-7'
-    - cron: '40 21 * * 1-7'
-    - cron: '45 21 * * 1-7'
-    - cron: '50 21 * * 1-7'
-    - cron: '55 21 * * 1-7'
-    - cron: '0 22 * * 1-7'
-    - cron: '5 22 * * 1-7'
-    - cron: '10 22 * * 1-7'
-    - cron: '15 22 * * 1-7'
-    - cron: '20 22 * * 1-7'
-    - cron: '25 22 * * 1-7'
-    - cron: '30 22 * * 1-7'
-    - cron: '35 22 * * 1-7'
-    - cron: '40 22 * * 1-7'
-    - cron: '45 22 * * 1-7'
-    - cron: '50 22 * * 1-7'
-    - cron: '55 22 * * 1-7'
-  workflow_dispatch:
+Alerty:
+  FREKVENCE:
+    - aktuální Hz mimo rozsah 49.85 – 50.15
+    - delta 1h > ±0.10 MWh
+    - delta 4h > ±0.20 MWh
+    - delta 8h > ±0.40 MWh
 
-jobs:
-  alert:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
+  CENA RE:
+    - jakákoliv položka > 500 nebo < -100 EUR/MWh
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
+Cooldown: 1 hodina na alert_type (uloženo v DB)
+"""
 
-      - name: Install dependencies
-        run: pip install requests pandas zeep pytz sqlalchemy psycopg2-binary
+import os
+import sys
+import smtplib
+import requests
+import pytz
+import pandas as pd
+from datetime import datetime, timedelta
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from zeep import Client
+from zeep.transports import Transport
+from sqlalchemy import create_engine, text
 
-      - name: Run ČEPS alert check
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-        run: python ceps_alert.py
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from config import EMAIL_RECIPIENTS
+
+# ── KONFIGURACE ────────────────────────────────────
+DB_URL         = os.environ.get("DATABASE_URL", "")
+GMAIL_USER     = "oldrich.bazala@gmail.com"
+GMAIL_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+EMAIL_TO       = ", ".join(EMAIL_RECIPIENTS)
+COOLDOWN_HOURS = 1
+
+WSDL = "https://vip-prod-service-00-azapp.azurewebsites.net/_layouts/cepsdata.asmx?WSDL"
+NS   = "https://www.ceps.cz/CepsData/StructuredData/1.0"
+TZ   = pytz.timezone("Europe/Prague")
+
+if not DB_URL:
+    raise ValueError("DATABASE_URL není nastavena!")
+if not GMAIL_PASSWORD:
+    raise ValueError("GMAIL_APP_PASSWORD není nastavena!")
+
+engine = create_engine(DB_URL.replace("postgres://", "postgresql://", 1))
+
+# ── THRESHOLDY ─────────────────────────────────────
+FREQ_MIN       = 49.85
+FREQ_MAX       = 50.15
+DELTA_1H_MAX   = 0.10   # MWh
+DELTA_4H_MAX   = 0.20
+DELTA_8H_MAX   = 0.40
+CENA_MAX       = 500.0
+CENA_MIN       = -100.0
+
+# ── DB: alert_log tabulka ──────────────────────────
+def init_alert_log():
+    with engine.connect() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS alert_log (
+                id          SERIAL PRIMARY KEY,
+                alert_type  TEXT NOT NULL,
+                sent_at     TIMESTAMP NOT NULL,
+                message     TEXT
+            )
+        """))
+        conn.commit()
+
+
+def can_send_alert(alert_type: str) -> bool:
+    """Vrátí True pokud od posledního alertu tohoto typu uplynula alespoň 1 hodina."""
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("""
+                SELECT sent_at FROM alert_log
+                WHERE alert_type = :t
+                ORDER BY sent_at DESC
+                LIMIT 1
+            """), {"t": alert_type})
+            row = result.fetchone()
+        if row is None:
+            return True
+        last = row[0]
+        if last.tzinfo is None:
+            last = pytz.utc.localize(last)
+        return datetime.now(pytz.utc) - last > timedelta(hours=COOLDOWN_HOURS)
+    except Exception:
+        return True
+
+
+def log_alert(alert_type: str, message: str):
+    with engine.connect() as conn:
+        conn.execute(text("""
+            INSERT INTO alert_log (alert_type, sent_at, message)
+            VALUES (:t, :s, :m)
+        """), {"t": alert_type, "s": datetime.now(pytz.utc), "m": message})
+        conn.commit()
+
+
+# ── EMAIL ──────────────────────────────────────────
+def send_alert_email(subject: str, body: str):
+    msg = MIMEMultipart()
+    msg["From"]    = GMAIL_USER
+    msg["To"]      = EMAIL_TO
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(GMAIL_USER, GMAIL_PASSWORD)
+        server.sendmail(GMAIL_USER, EMAIL_TO, msg.as_string())
+    print(f"Alert odeslán: {subject}")
+
+
+# ── ČEPS API ───────────────────────────────────────
+def xml_na_df(result):
+    items = result.findall(f"{{{NS}}}data/{{{NS}}}item")
+    if not items:
+        items = result.findall("data/item")
+    radky = []
+    for item in items:
+        radek = {"cas": item.get("date")}
+        for k, v in item.attrib.items():
+            if k != "date":
+                try:    radek[k] = float(v)
+                except: radek[k] = 0.0
+        radky.append(radek)
+    if not radky:
+        return pd.DataFrame()
+    df = pd.DataFrame(radky)
+    df["cas"] = pd.to_datetime(df["cas"], utc=True).dt.tz_convert("Europe/Prague")
+    return df
+
+
+def nazvy_serii(result):
+    els = result.findall(f"{{{NS}}}series/{{{NS}}}serie")
+    if not els:
+        els = result.findall("series/serie")
+    return {s.get("id"): s.get("name") for s in els}
+
+
+def vypocti_delty(df):
+    if df.empty or "value1" not in df.columns:
+        return {"1h": None, "4h": None, "8h": None}
+    df = df.copy()
+    df["delta_min"] = (50.0 - df["value1"]) / 0.2 / 60.0
+    delty = {}
+    for hodiny, label in [(1, "1h"), (4, "4h"), (8, "8h")]:
+        pocet = hodiny * 60
+        if len(df) >= pocet:
+            delty[label] = df["delta_min"].iloc[-pocet:].sum()
+        elif len(df) > 0:
+            delty[label] = df["delta_min"].sum()
+        else:
+            delty[label] = None
+    return delty
+
+
+def stahni_data():
+    now_local = datetime.now(TZ)
+    now       = now_local.replace(tzinfo=None)
+    pulnoc    = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    date_from = min(pulnoc, now - timedelta(hours=8))
+    date_to   = now
+
+    session = requests.Session()
+    client  = Client(WSDL, transport=Transport(session=session))
+
+    r_freq = client.service.Frekvence(dateFrom=date_from, dateTo=date_to)
+    r_cena = client.service.AktualniCenaRE(dateFrom=date_from, dateTo=date_to)
+
+    return {
+        "freq_df":    xml_na_df(r_freq),
+        "cena_df":    xml_na_df(r_cena),
+        "cena_nazvy": nazvy_serii(r_cena),
+    }
+
+
+# ── HLAVNÍ LOGIKA ──────────────────────────────────
+def main():
+    init_alert_log()
+
+    print(f"ČEPS alert check: {datetime.now(TZ).strftime('%d.%m.%Y %H:%M:%S')}")
+
+    try:
+        data = stahni_data()
+    except Exception as e:
+        print(f"Chyba při stahování dat: {e}")
+        sys.exit(0)  # Nezabijeme workflow, jen přeskočíme
+
+    df_freq    = data["freq_df"]
+    df_cena    = data["cena_df"]
+    cena_nazvy = data["cena_nazvy"]
+
+    now_str = datetime.now(TZ).strftime("%d.%m.%Y %H:%M:%S")
+
+    # ── ALERT 1: Aktuální frekvence ────────────────
+    if not df_freq.empty:
+        freq_last = df_freq["value1"].iloc[-1]
+        print(f"Frekvence aktuální: {freq_last:.3f} Hz")
+
+        if freq_last < FREQ_MIN or freq_last > FREQ_MAX:
+            alert_type = "freq_actual"
+            direction  = "NÍZKÁ" if freq_last < FREQ_MIN else "VYSOKÁ"
+            msg = (
+                f"⚡ ALERT – Frekvence {direction}\n\n"
+                f"Aktuální hodnota: {freq_last:.3f} Hz\n"
+                f"Povolený rozsah: {FREQ_MIN} – {FREQ_MAX} Hz\n"
+                f"Čas: {now_str}"
+            )
+            if can_send_alert(alert_type):
+                send_alert_email(f"⚡ ČEPS ALERT – Frekvence {direction} ({freq_last:.3f} Hz)", msg)
+                log_alert(alert_type, msg)
+            else:
+                print(f"Alert {alert_type} v cooldownu, přeskočeno")
+
+    # ── ALERT 2: Delta frekvence ───────────────────
+    if not df_freq.empty:
+        delty = vypocti_delty(df_freq)
+        thresholdy = {"1h": DELTA_1H_MAX, "4h": DELTA_4H_MAX, "8h": DELTA_8H_MAX}
+
+        for label, threshold in thresholdy.items():
+            val = delty.get(label)
+            if val is None:
+                continue
+            print(f"Delta {label}: {val:+.4f} MWh (threshold ±{threshold})")
+            if abs(val) > threshold:
+                alert_type = f"freq_delta_{label}"
+                direction  = "kladná" if val > 0 else "záporná"
+                msg = (
+                    f"⚡ ALERT – Delta frekvence {label}\n\n"
+                    f"Kumulativní odchylka za {label}: {val:+.4f} MWh\n"
+                    f"Threshold: ±{threshold} MWh\n"
+                    f"Aktuální frekvence: {df_freq['value1'].iloc[-1]:.3f} Hz\n"
+                    f"Čas: {now_str}"
+                )
+                if can_send_alert(alert_type):
+                    send_alert_email(f"⚡ ČEPS ALERT – Delta {label} = {val:+.4f} MWh", msg)
+                    log_alert(alert_type, msg)
+                else:
+                    print(f"Alert {alert_type} v cooldownu, přeskočeno")
+
+    # ── ALERT 3: Cena RE ───────────────────────────
+    if not df_cena.empty:
+        for vid, vname in cena_nazvy.items():
+            if vid not in df_cena.columns:
+                continue
+            cena_last = df_cena[vid].iloc[-1]
+            print(f"Cena RE {vname}: {cena_last:.2f} EUR/MWh")
+
+            if cena_last > CENA_MAX or cena_last < CENA_MIN:
+                alert_type = f"cena_{vid}"
+                direction  = "VYSOKÁ" if cena_last > CENA_MAX else "ZÁPORNÁ/NÍZKÁ"
+                msg = (
+                    f"💶 ALERT – Cena RE {direction}\n\n"
+                    f"Produkt: {vname}\n"
+                    f"Aktuální cena: {cena_last:.2f} EUR/MWh\n"
+                    f"Threshold: > {CENA_MAX} nebo < {CENA_MIN} EUR/MWh\n"
+                    f"Čas: {now_str}"
+                )
+                if can_send_alert(alert_type):
+                    send_alert_email(f"💶 ČEPS ALERT – Cena RE {direction} ({cena_last:.2f} EUR/MWh)", msg)
+                    log_alert(alert_type, msg)
+                else:
+                    print(f"Alert {alert_type} v cooldownu, přeskočeno")
+
+    print("Check dokončen.")
+
+
+if __name__ == "__main__":
+    main()
