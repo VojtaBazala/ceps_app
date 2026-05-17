@@ -268,10 +268,6 @@ with st.spinner("Načítám data..."):
 
     try:
         df_odch = load_odchylky(period_days)
-        # DEBUG - zobraz co ČEPS vrátil
-        st.write(f"DEBUG odchylky: rows={len(df_odch)}, cols={list(df_odch.columns) if not df_odch.empty else 'empty'}")
-        if not df_odch.empty:
-            st.write(df_odch.head(3))
     except Exception as e:
         st.warning(f"⚠️ Odchylky (ČEPS): {e}")
 
@@ -342,11 +338,18 @@ with col_odch_col:
     st.markdown('<div class="col-header odch">📊 Odhadovaná cena odchylky</div>', unsafe_allow_html=True)
 
     val_cols = [c for c in df_odch.columns if c != "cas"] if not df_odch.empty else []
-    df_odch_valid = df_odch.dropna(subset=["cas"]) if not df_odch.empty else pd.DataFrame()
+    df_odch_valid = df_odch[df_odch["cas"].notna()] if not df_odch.empty else pd.DataFrame()
+    # Pokud jsou všechny cas NaT, použij celý df
+    if df_odch_valid.empty and not df_odch.empty:
+        df_odch_valid = df_odch.copy()
 
     if not df_odch_valid.empty and val_cols:
         last    = df_odch_valid.iloc[-1]
-        cas_str = pd.Timestamp(last["cas"]).strftime("%d.%m. %H:%M")
+        cas_val = last["cas"]
+        if pd.isna(cas_val):
+            cas_str = "aktuální"
+        else:
+            cas_str = pd.Timestamp(cas_val).strftime("%d.%m. %H:%M")
         first_val = last[val_cols[0]] if val_cols else None
 
         st.markdown(f'<div class="section-label">Aktuální ({cas_str})</div>', unsafe_allow_html=True)
