@@ -135,7 +135,7 @@ if not df_fcr.empty:
     df_fcr_show["CZ Cena přepočet 1h [EUR/MW]"] = df_fcr_show["CZ Cena 4h blok [EUR/MW]"] / 4
     df_fcr_show = df_fcr_show[["Blok", "CZ Cena 4h blok [EUR/MW]", "CZ Cena přepočet 1h [EUR/MW]", "CZ Deficit(-)/Přebytek(+) [MW]"]]
 
-    col_tbl, _g, col_chart = st.columns([3, 0.3, 4])
+    col_tbl, _g, col_chart = st.columns([4, 0.3, 3])
 
     with col_tbl:
         st.dataframe(
@@ -144,9 +144,9 @@ if not df_fcr.empty:
             hide_index=True,
             column_config={
                 "Blok":                           st.column_config.TextColumn(width="small"),
-                "CZ Cena 4h blok [EUR/MW]":       st.column_config.NumberColumn(width="medium", format="%.2f"),
-                "CZ Cena přepočet 1h [EUR/MW]":   st.column_config.NumberColumn(width="medium", format="%.2f"),
-                "CZ Deficit(-)/Přebytek(+) [MW]": st.column_config.NumberColumn(width="medium", format="%.0f"),
+                "CZ Cena 4h blok [EUR/MW]":       st.column_config.NumberColumn(width="small", format="%.2f"),
+                "CZ Cena přepočet 1h [EUR/MW]":   st.column_config.NumberColumn(width="small", format="%.2f"),
+                "CZ Deficit(-)/Přebytek(+) [MW]": st.column_config.NumberColumn(width="small", format="%.0f"),
             }
         )
 
