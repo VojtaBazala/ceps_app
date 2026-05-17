@@ -109,7 +109,7 @@ with header_r:
 
 st.markdown(
     f'<div style="font-family:\'Courier New\',monospace;font-size:0.85rem;color:{TEXT};letter-spacing:1px;margin-bottom:4px;">'
-    f'Automatická predikce hodinových cen na následující den; aktualizace zpravidla do 7:30 D-1</div>',
+    f'Predikce hodinových cen na následující den; aktualizace zpravidla do 7:30 D-1</div>',
     unsafe_allow_html=True
 )
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
@@ -136,7 +136,7 @@ if df_forecast.empty:
 forecast_date_str = pd.to_datetime(df_forecast["forecast_date"].iloc[0]).strftime("%d.%m.%Y")
 _tz = pytz.timezone("Europe/Prague")
 if "run_date" in df_forecast.columns and df_forecast["run_date"].iloc[0] is not None:
-    run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).tz_localize("UTC").astimezone(_tz).strftime("%d.%m.%Y %H:%M")
+    run_date_str = pd.to_datetime(df_forecast["run_date"].iloc[0]).strftime("%d.%m.%Y %H:%M") if "run_date" in df_forecast.columns else "—"
 else:
     run_date_str = "—"
 
