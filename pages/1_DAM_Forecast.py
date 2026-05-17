@@ -71,6 +71,7 @@ st.markdown(f"""
   }}
   .row-item:last-child {{ border-bottom:none; }}
   .row-name  {{ font-size:0.7rem; color:{SUBTEXT}; letter-spacing:1px; }}
+  .row-name[title] {{ cursor:help; border-bottom:1px dotted {SUBTEXT}; }}
   .row-value {{ font-size:0.95rem; font-weight:700; }}
   div[data-testid="stButton"] button {{
     background:transparent !important; border:1px solid {BORDER} !important;
@@ -174,11 +175,11 @@ with col2:
         days   = latest.get("eval_days_total", 0)
         if all(v is not None for v in [mae, rmse, median, smape]):
             st.markdown(
-                f'<div class="row-item"><span class="row-name">MAE</span><span class="row-value" style="color:{TEXT}">{mae:.2f} EUR/MWh</span></div>'
-                f'<div class="row-item"><span class="row-name">RMSE</span><span class="row-value" style="color:{TEXT}">{rmse:.2f} EUR/MWh</span></div>'
-                f'<div class="row-item"><span class="row-name">Median AE</span><span class="row-value" style="color:{TEXT}">{median:.2f} EUR/MWh</span></div>'
-                f'<div class="row-item"><span class="row-name">SMAPE</span><span class="row-value" style="color:#ffd740">{smape:.1f} %</span></div>'
-                f'<div class="row-item"><span class="row-name">Hodnoceno dní</span><span class="row-value" style="color:{SUBTEXT}">{int(days)}</span></div>',
+                f'<div class="row-item"><span class="row-name" title="Průměrná absolutní chyba forecastu – o kolik EUR/MWh se forecast průměrně mýlí">MAE ⓘ</span><span class="row-value" style="color:{TEXT}">{mae:.2f} EUR/MWh</span></div>'
+                f'<div class="row-item"><span class="row-name" title="Odmocnina průměru čtverců chyb – penalizuje velké odchylky více než MAE">RMSE ⓘ</span><span class="row-value" style="color:{TEXT}">{rmse:.2f} EUR/MWh</span></div>'
+                f'<div class="row-item"><span class="row-name" title="Střední absolutní chyba – méně citlivá na extrémní výchylky než MAE">Median AE ⓘ</span><span class="row-value" style="color:{TEXT}">{median:.2f} EUR/MWh</span></div>'
+                f'<div class="row-item"><span class="row-name" title="Průměrná procentuální chyba – relativní přesnost forecastu vůči skutečné ceně">SMAPE ⓘ</span><span class="row-value" style="color:#ffd740">{smape:.1f} %</span></div>'
+                f'<div class="row-item"><span class="row-name" title="Počet dní pro které máme jak forecast tak skutečnou cenu">Hodnoceno dní ⓘ</span><span class="row-value" style="color:{SUBTEXT}">{int(days)}</span></div>',
                 unsafe_allow_html=True
             )
         else:
