@@ -129,9 +129,11 @@ if not df_fcr.empty:
     df_fcr_show = df_fcr.copy()
     df_fcr_show["Blok"] = df_fcr_show["product_name"].apply(fmt_block)
     df_fcr_show = df_fcr_show.rename(columns={
-        "cz_price":           "CZ Cena [EUR/MW]",
+        "cz_price":           "CZ Cena 4h blok [EUR/MW]",
         "cz_deficit_surplus": "CZ Deficit(-)/Přebytek(+) [MW]",
-    })[["Blok", "CZ Cena [EUR/MW]", "CZ Deficit(-)/Přebytek(+) [MW]"]]
+    })
+    df_fcr_show["CZ Cena přepočet 1h [EUR/MW]"] = df_fcr_show["CZ Cena 4h blok [EUR/MW]"] / 4
+    df_fcr_show = df_fcr_show[["Blok", "CZ Cena 4h blok [EUR/MW]", "CZ Cena přepočet 1h [EUR/MW]", "CZ Deficit(-)/Přebytek(+) [MW]"]]
 
     col_tbl, _g, col_chart = st.columns([3, 0.3, 4])
 
@@ -142,7 +144,8 @@ if not df_fcr.empty:
             hide_index=True,
             column_config={
                 "Blok":                           st.column_config.TextColumn(width="small"),
-                "CZ Cena [EUR/MW]":               st.column_config.NumberColumn(width="medium", format="%.2f"),
+                "CZ Cena 4h blok [EUR/MW]":       st.column_config.NumberColumn(width="medium", format="%.2f"),
+                "CZ Cena přepočet 1h [EUR/MW]":   st.column_config.NumberColumn(width="medium", format="%.2f"),
                 "CZ Deficit(-)/Přebytek(+) [MW]": st.column_config.NumberColumn(width="medium", format="%.0f"),
             }
         )
@@ -151,7 +154,7 @@ if not df_fcr.empty:
         fig_fcr = go.Figure()
         fig_fcr.add_trace(go.Bar(
             x=df_fcr_show["Blok"],
-            y=df_fcr_show["CZ Cena [EUR/MW]"],
+            y=df_fcr_show["CZ Cena 4h blok [EUR/MW]"],
             name="CZ cena",
             marker_color="#ffd740",
             hovertemplate="%{x}<br><b>%{y:.2f} EUR/MW</b>",
