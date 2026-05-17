@@ -358,7 +358,8 @@ if not df_cena.empty:
 st.caption("Data: ČEPS, a.s. – Oficiální SOAP API (cepsdata.asmx)")
 
 # ── MORSE ──────────────────────────────────────────
-MORSE = "-.-. .- .-. .--. .   -.. .. . --  --..--   .... --- .-. .-   .-. ..- .. -"
+# Carpe diem, hora ruit – mezery mezi slovy jsou 3 mezery, mezi písmeny 1 mezera
+MORSE = "-.-. .- .-. .--. .   -.. .. . --   --..--   .... --- .-. .-   .-. ..- .. -"
 PLAIN = "Carpe diem, hora ruit"
 
 if "morse_revealed" not in st.session_state:
@@ -372,8 +373,9 @@ with morse_col:
         unsafe_allow_html=True
     )
 with btn_col:
-    if st.button("∿ translate", use_container_width=True):
+    if st.button("∿ translate", key="morse_btn", use_container_width=True):
         st.session_state.morse_revealed = not st.session_state.morse_revealed
+        st.rerun()
 
 if st.session_state.morse_revealed:
     st.markdown(
