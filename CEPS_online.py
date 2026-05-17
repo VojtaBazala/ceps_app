@@ -362,6 +362,7 @@ st.markdown(
 st.markdown(
     '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">'
     f'<span style="font-size:0.75rem;color:{SUBTEXT};">Data: ČEPS, a.s. – Oficiální SOAP API (cepsdata.asmx)</span>'
+    '<span style="font-size:0.75rem;color:#8899bb;font-style:italic;">oldrich by claude</span>'
     '<span style="font-family:\'Cinzel\',serif;font-size:0.85rem;color:#8899bb;letter-spacing:2px;">Carpe diem, hora ruit</span>'
     '</div>',
     unsafe_allow_html=True
