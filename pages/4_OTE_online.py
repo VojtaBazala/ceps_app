@@ -232,7 +232,7 @@ with ctrl_l:
 
 OBDOBI = {"1 týden": 7, "1 měsíc": 30, "6 měsíců": 180, "12 měsíců": 365}
 with ctrl_r:
-    _, sel_col, _ = st.columns([0, 2, 6])
+    sel_col, _ = st.columns([2, 6])
     with sel_col:
         obdobi_label = st.selectbox("Období grafů", list(OBDOBI.keys()), index=1, label_visibility="collapsed")
 period_days = OBDOBI[obdobi_label]
