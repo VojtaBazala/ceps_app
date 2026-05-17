@@ -188,63 +188,74 @@ if not df_afrr.empty:
     df_afrr_show = df_afrr.copy()
     df_afrr_show["Produkt"] = df_afrr_show["product"].apply(fmt_afrr_product)
     df_afrr_show = df_afrr_show.rename(columns={
-        "total_marginal_price": "Total Marginální [EUR/MW/h]",
-        "cz_min_price":         "CZ Min [EUR/MW/h]",
-        "cz_avg_price":         "CZ Průměr [EUR/MW/h]",
-        "cz_marginal_price":    "CZ Marginální [EUR/MW/h]",
-        "cz_import_export":     "CZ Import(-)/Export(+) [MW]",
-        "cz_allocated_mw":      "CZ Alokováno [MW]",
-    })[["Produkt", "Total Marginální [EUR/MW/h]", "CZ Min [EUR/MW/h]",
-        "CZ Průměr [EUR/MW/h]", "CZ Marginální [EUR/MW/h]",
-        "CZ Import(-)/Export(+) [MW]", "CZ Alokováno [MW]"]]
+        "cz_min_price":      "CZ Min [EUR/MW/h]",
+        "cz_avg_price":      "CZ Průměr [EUR/MW/h]",
+        "cz_marginal_price": "CZ Marginální [EUR/MW/h]",
+        "cz_import_export":  "CZ Import(-)/Export(+) [MW]",
+    })[["Produkt", "CZ Min [EUR/MW/h]", "CZ Průměr [EUR/MW/h]",
+        "CZ Marginální [EUR/MW/h]", "CZ Import(-)/Export(+) [MW]"]]
 
     st.dataframe(
         df_afrr_show.round(2),
         use_container_width=True,
         hide_index=True,
         column_config={
-            "Produkt":                      st.column_config.TextColumn(width="small"),
-            "Total Marginální [EUR/MW/h]":  st.column_config.NumberColumn(width="medium", format="%.2f"),
-            "CZ Min [EUR/MW/h]":            st.column_config.NumberColumn(width="small",  format="%.2f"),
-            "CZ Průměr [EUR/MW/h]":         st.column_config.NumberColumn(width="small",  format="%.2f"),
-            "CZ Marginální [EUR/MW/h]":     st.column_config.NumberColumn(width="medium", format="%.2f"),
-            "CZ Import(-)/Export(+) [MW]":  st.column_config.NumberColumn(width="medium", format="%.0f"),
-            "CZ Alokováno [MW]":            st.column_config.NumberColumn(width="small",  format="%.0f"),
+            "Produkt":                     st.column_config.TextColumn(width="small"),
+            "CZ Min [EUR/MW/h]":           st.column_config.NumberColumn(width="small",  format="%.2f"),
+            "CZ Průměr [EUR/MW/h]":        st.column_config.NumberColumn(width="small",  format="%.2f"),
+            "CZ Marginální [EUR/MW/h]":    st.column_config.NumberColumn(width="medium", format="%.2f"),
+            "CZ Import(-)/Export(+) [MW]": st.column_config.NumberColumn(width="medium", format="%.0f"),
         }
     )
 
-    # Graf aFRR marginálních cen
+    # Grafy aFRR – vedle sebe
     df_pos = df_afrr[df_afrr["product"].str.startswith("POS")].copy()
     df_neg = df_afrr[df_afrr["product"].str.startswith("NEG")].copy()
     blok_labels = ["00–04", "04–08", "08–12", "12–16", "16–20", "20–24"]
 
-    fig_afrr = go.Figure()
-    if not df_pos.empty:
-        fig_afrr.add_trace(go.Bar(
-            x=blok_labels[:len(df_pos)],
-            y=df_pos["cz_marginal_price"].values,
-            name="▲ POS marginální CZ",
-            marker_color="rgba(0,230,118,0.7)",
-            hovertemplate="%{x}<br><b>%{y:.2f} EUR/MW/h</b>",
-        ))
-    if not df_neg.empty:
-        fig_afrr.add_trace(go.Bar(
-            x=blok_labels[:len(df_neg)],
-            y=df_neg["cz_marginal_price"].values,
-            name="▼ NEG marginální CZ",
-            marker_color="rgba(255,61,87,0.7)",
-            hovertemplate="%{x}<br><b>%{y:.2f} EUR/MW/h</b>",
-        ))
-    fig_afrr.update_layout(
-        paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
-        font=dict(color=LEG_COL, family="Courier New", size=11),
-        height=220, margin=dict(l=50, r=10, t=30, b=30),
-        barmode="group", hovermode="x unified",
-        legend=dict(bgcolor=PLOT_BG, bordercolor=BORDER, font=dict(size=11, color=LEG_COL)),
-        xaxis=dict(gridcolor=GRID_COL, color=LEG_COL),
-        yaxis=dict(gridcolor=GRID_COL, color=LEG_COL, title="EUR/MW/h"),
-    )
-    st.plotly_chart(fig_afrr, use_container_width=True)
+    g_pos, _gg, g_neg = st.columns([5, 0.3, 5])
+
+    with g_pos:
+        fig_pos = go.Figure()
+        if not df_pos.empty:
+            fig_pos.add_trace(go.Bar(
+                x=blok_labels[:len(df_pos)],
+                y=df_pos["cz_marginal_price"].values,
+                name="▲ aFRR+",
+                marker_color="rgba(0,230,118,0.7)",
+                hovertemplate="%{x}<br><b>%{y:.2f} EUR/MW/h</b>",
+            ))
+        fig_pos.update_layout(
+            title=dict(text="▲ aFRR+ marginální cena CZ", font=dict(color="#00e676", size=12, family="Courier New")),
+            paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
+            font=dict(color=LEG_COL, family="Courier New", size=11),
+            height=220, margin=dict(l=50, r=10, t=40, b=30),
+            showlegend=False, hovermode="x unified",
+            xaxis=dict(gridcolor=GRID_COL, color=LEG_COL),
+            yaxis=dict(gridcolor=GRID_COL, color=LEG_COL, title="EUR/MW/h"),
+        )
+        st.plotly_chart(fig_pos, use_container_width=True)
+
+    with g_neg:
+        fig_neg = go.Figure()
+        if not df_neg.empty:
+            fig_neg.add_trace(go.Bar(
+                x=blok_labels[:len(df_neg)],
+                y=df_neg["cz_marginal_price"].values,
+                name="▼ aFRR-",
+                marker_color="rgba(255,61,87,0.7)",
+                hovertemplate="%{x}<br><b>%{y:.2f} EUR/MW/h</b>",
+            ))
+        fig_neg.update_layout(
+            title=dict(text="▼ aFRR- marginální cena CZ", font=dict(color="#ff3d57", size=12, family="Courier New")),
+            paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
+            font=dict(color=LEG_COL, family="Courier New", size=11),
+            height=220, margin=dict(l=50, r=10, t=40, b=30),
+            showlegend=False, hovermode="x unified",
+            xaxis=dict(gridcolor=GRID_COL, color=LEG_COL),
+            yaxis=dict(gridcolor=GRID_COL, color=LEG_COL, title="EUR/MW/h"),
+        )
+        st.plotly_chart(fig_neg, use_container_width=True)
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
