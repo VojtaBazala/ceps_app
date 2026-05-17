@@ -431,6 +431,7 @@ st.markdown(
 st.markdown(
     f'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">'
     f'<span style="font-size:0.75rem;color:{SUBTEXT};">Data: regelleistung.net – FCR & aFRR Capacity Market Results</span>'
+    f'<span style="font-size:0.75rem;color:#8899bb;font-style:italic;">oldrich by claude</span>'
     f'<span style="font-family:\'Cinzel\',serif;font-size:0.85rem;color:#8899bb;letter-spacing:2px;">Sine sole sileo</span>'
     f'</div>',
     unsafe_allow_html=True
