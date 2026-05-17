@@ -1,5 +1,5 @@
 """
-pages/4_OTE_online.py – OTE online: DAM ceny (ENTSO-E) + odchylky (ČEPS)
+pages/4_OTE_online.py – DAM ceny a odchylky
 """
 
 import streamlit as st
@@ -17,7 +17,7 @@ from zeep.transports import Transport
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from navigation import show_nav
 
-st.set_page_config(page_title="OTE online", page_icon="🔌", layout="wide")
+st.set_page_config(page_title="DAM ceny a odchylky", page_icon="🔌", layout="wide")
 
 # ── TÉMA ───────────────────────────────────────────
 if "dark_mode" not in st.session_state:
@@ -33,6 +33,8 @@ if st.session_state.dark_mode:
     GRID_COL = "#1e2d50"
     LEG_COL  = "#cdd8f0"
     BTN_TEMA = "☀️"
+    TBL_EVEN = "#0f1628"
+    TBL_ODD  = "#0a0e1a"
 else:
     BG       = "#f5f7fa"
     BORDER   = "#dde3ef"
@@ -43,6 +45,8 @@ else:
     GRID_COL = "#dde3ef"
     LEG_COL  = "#1a2035"
     BTN_TEMA = "🌙"
+    TBL_EVEN = "#f0f3f8"
+    TBL_ODD  = "#ffffff"
 
 st.markdown(f"""
 <style>
@@ -75,6 +79,19 @@ st.markdown(f"""
     font-size:0.62rem; color:{SUBTEXT}; text-transform:uppercase;
     letter-spacing:1px; margin-top:12px; margin-bottom:4px; font-family:'Courier New',monospace;
   }}
+  .odch-table {{
+    width:100%; border-collapse:collapse; font-family:'Courier New',monospace;
+    font-size:0.8rem; margin-top:8px;
+  }}
+  .odch-table th {{
+    text-align:left; padding:5px 8px; font-size:0.65rem; letter-spacing:1px;
+    text-transform:uppercase; color:{SUBTEXT}; border-bottom:1px solid {BORDER};
+  }}
+  .odch-table td {{
+    padding:4px 8px; border-bottom:1px solid {BORDER};
+  }}
+  .odch-table tr:nth-child(even) td {{ background:{TBL_EVEN}; }}
+  .odch-table tr:nth-child(odd)  td {{ background:{TBL_ODD}; }}
   div[data-testid="stButton"] button {{
     background:transparent !important; border:1px solid {BORDER} !important;
     color:{SUBTEXT} !important; font-size:0.8rem !important;
@@ -90,6 +107,7 @@ TZ         = pytz.timezone("Europe/Prague")
 CEPS_WSDL  = "https://vip-prod-service-00-azapp.azurewebsites.net/_layouts/cepsdata.asmx?WSDL"
 ENTSOE_URL = "https://web-api.tp.entsoe.eu/api"
 CZ_ZONE    = "10YCZ-CEPS-----N"
+OBDOBI     = {"1T": 7, "1M": 30, "6M": 180, "12M": 365}
 
 
 # ── ENTSO-E: DAM ceny ─────────────────────────────
@@ -109,10 +127,8 @@ def get_dam_prices(start_utc: datetime, end_utc: datetime, token: str) -> pd.Dat
     resp = requests.get(ENTSOE_URL, params=params, timeout=30)
     resp.raise_for_status()
     root = ET.fromstring(resp.content)
-
     if "Acknowledgement_MarketDocument" in root.tag:
         return pd.DataFrame()
-
     ns_uri = root.tag.split("}")[0].strip("{")
     ns = {"n": ns_uri}
     rows = []
@@ -130,9 +146,7 @@ def get_dam_prices(start_utc: datetime, end_utc: datetime, token: str) -> pd.Dat
             for point in period.findall("n:Point", ns):
                 pos   = int(point.findtext("n:position", "1", namespaces=ns))
                 price = float(point.findtext("n:price.amount", "0", namespaces=ns))
-                dt_utc = start_dt + step * (pos - 1)
-                rows.append({"datetime_utc": dt_utc, "price_eur_mwh": price})
-
+                rows.append({"datetime_utc": start_dt + step * (pos - 1), "price_eur_mwh": price})
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
@@ -148,10 +162,12 @@ def compute_dam_index(df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
     rows = []
     for d, grp in df.groupby("date"):
-        base  = grp["price_eur_mwh"].mean()
-        peak  = grp[grp["hour"].between(8, 19)]["price_eur_mwh"].mean()
-        offpk = grp[~grp["hour"].between(8, 19)]["price_eur_mwh"].mean()
-        rows.append({"date": d, "base_load": base, "peak_load": peak, "offpeak_load": offpk})
+        rows.append({
+            "date":       d,
+            "base_load":  grp["price_eur_mwh"].mean(),
+            "peak_load":  grp[grp["hour"].between(8, 19)]["price_eur_mwh"].mean(),
+            "offpeak_load": grp[~grp["hour"].between(8, 19)]["price_eur_mwh"].mean(),
+        })
     return pd.DataFrame(rows)
 
 
@@ -185,7 +201,16 @@ def ceps_xml_na_df(result) -> pd.DataFrame:
 def get_odchylky(date_from, date_to) -> pd.DataFrame:
     client = get_ceps_client()
     result = client.service.OdhadovanaCenaOdchylky(dateFrom=date_from, dateTo=date_to)
-    return ceps_xml_na_df(result)
+    df = ceps_xml_na_df(result)
+    if df.empty:
+        return df
+    # Přejmenuj value2 na odh_cena (hlavní sloupec = odhadovaná cena odchylky)
+    rename = {}
+    if "value2" in df.columns:
+        rename["value2"] = "odh_cena"
+    if rename:
+        df = df.rename(columns=rename)
+    return df
 
 
 # ── CACHE ──────────────────────────────────────────
@@ -206,7 +231,7 @@ def load_odchylky(period_days: int) -> pd.DataFrame:
     return get_odchylky(date_from, date_to)
 
 
-def base_layout(title, color="#00c8ff"):
+def base_layout(title, color="#00c8ff", height=260):
     return dict(
         title=dict(text=title, font=dict(color=color, size=13, family="Courier New")),
         paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
@@ -215,16 +240,26 @@ def base_layout(title, color="#00c8ff"):
         legend=dict(bgcolor=PLOT_BG, bordercolor=BORDER, font=dict(size=11, color=LEG_COL)),
         xaxis=dict(gridcolor=GRID_COL, showgrid=True, color=LEG_COL),
         yaxis=dict(gridcolor=GRID_COL, showgrid=True, color=LEG_COL),
-        margin=dict(l=50, r=10, t=40, b=30), height=240,
+        margin=dict(l=50, r=10, t=40, b=30), height=height,
     )
+
+
+def range_buttons():
+    return [
+        dict(count=7,  label="1T", step="day",  stepmode="backward"),
+        dict(count=30, label="1M", step="day",  stepmode="backward"),
+        dict(count=6,  label="6M", step="month", stepmode="backward"),
+        dict(count=1,  label="12M", step="year", stepmode="backward"),
+        dict(step="all", label="Vše"),
+    ]
 
 
 # ── HLAVIČKA ───────────────────────────────────────
 header_l, header_r = st.columns([7, 3])
 with header_l:
-    st.markdown('<div class="page-title">🔌 OTE online</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-title">🔌 DAM ceny a odchylky</div>', unsafe_allow_html=True)
 with header_r:
-    nav_sp, nav_sel, nav_tema = st.columns([1, 3, 1])
+    _, nav_sel, nav_tema = st.columns([1, 3, 1])
     with nav_sel:
         show_nav("nav_ote")
     with nav_tema:
@@ -232,52 +267,34 @@ with header_r:
             st.session_state.dark_mode = not st.session_state.dark_mode
             st.rerun()
 
-# ── OVLÁDÁNÍ ───────────────────────────────────────
-ctrl_l, ctrl_r = st.columns([2, 8])
-with ctrl_l:
-    if st.button("🔄 Obnovit", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
+# ── OBNOVIT ────────────────────────────────────────
+if st.button("🔄 Obnovit", use_container_width=False):
+    st.cache_data.clear()
+    st.rerun()
 
-OBDOBI = {"1 týden": 7, "1 měsíc": 30, "6 měsíců": 180, "12 měsíců": 365}
-with ctrl_r:
-    sel_col, _ = st.columns([2, 6])
-    with sel_col:
-        obdobi_label = st.selectbox("Období grafů", list(OBDOBI.keys()), index=1, label_visibility="collapsed")
-
-period_days = OBDOBI[obdobi_label]
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 # ── TOKEN ──────────────────────────────────────────
 token = os.environ.get("ENTSOE_API_TOKEN", "")
 if not token:
-    st.error("❌ ENTSOE_API_TOKEN není nastaven v Heroku config vars!")
+    st.error("❌ ENTSOE_API_TOKEN není nastaven!")
     st.stop()
 
 # ── DATA ───────────────────────────────────────────
-with st.spinner("Načítám data..."):
-    df_dam   = pd.DataFrame()
-    df_index = pd.DataFrame()
-    df_odch  = pd.DataFrame()
+df_dam   = pd.DataFrame()
+df_index = pd.DataFrame()
+df_odch  = pd.DataFrame()
 
+with st.spinner("Načítám data..."):
     try:
-        df_dam   = load_dam(period_days, token)
+        df_dam   = load_dam(365, token)  # vždy stáhni 12M pro grafy
         df_index = compute_dam_index(df_dam)
     except Exception as e:
-        st.warning(f"⚠️ DAM data (ENTSO-E): {e}")
-
+        st.warning(f"⚠️ DAM data: {e}")
     try:
-        df_odch = load_odchylky(period_days)
+        df_odch = load_odchylky(30)  # max 30 dní
     except Exception as e:
-        st.warning(f"⚠️ Odchylky (ČEPS): {e}")
-
-tz_label = "SELČ" if bool(datetime.now(TZ).dst()) else "SEČ"
-st.markdown(
-    f'<div style="font-size:0.75rem;color:{SUBTEXT};font-family:monospace;margin-bottom:0.5rem;">'
-    f'Aktualizace: <span style="color:#00e676">{datetime.now(TZ).strftime("%d.%m.%Y %H:%M:%S")} {tz_label}</span>'
-    f' &nbsp;|&nbsp; DAM: ENTSO-E &nbsp;|&nbsp; Odchylky: ČEPS SOAP</div>',
-    unsafe_allow_html=True
-)
+        st.warning(f"⚠️ Odchylky: {e}")
 
 # ── SLOUPCE ────────────────────────────────────────
 col_dam, _g, col_odch_col = st.columns([3, 0.2, 3])
@@ -310,6 +327,7 @@ with col_dam:
             )
         st.markdown(html, unsafe_allow_html=True)
 
+        # Hodinový profil nejnovějšího dne
         if not df_dam.empty:
             latest_date = df_dam["date"].max()
             df_today    = df_dam[df_dam["date"] == latest_date].copy()
@@ -323,11 +341,10 @@ with col_dam:
                     fill="tozeroy", fillcolor="rgba(0,230,118,0.07)",
                     hovertemplate="h%{x}<br><b>%{y:.2f} EUR/MWh</b>",
                 ))
-                layout_h = base_layout("Hodinové ceny DAM [EUR/MWh]", "#00e676")
-                layout_h["height"] = 180
+                layout_h = base_layout("Hodinové ceny DAM [EUR/MWh]", "#00e676", height=180)
                 layout_h["xaxis"]["tickmode"] = "linear"
-                layout_h["xaxis"]["tick0"] = 0
-                layout_h["xaxis"]["dtick"] = 2
+                layout_h["xaxis"]["tick0"]    = 0
+                layout_h["xaxis"]["dtick"]    = 2
                 fig_h.update_layout(**layout_h)
                 st.plotly_chart(fig_h, use_container_width=True)
     else:
@@ -337,47 +354,76 @@ with col_dam:
 with col_odch_col:
     st.markdown('<div class="col-header odch">📊 Odhadovaná cena odchylky</div>', unsafe_allow_html=True)
 
-    val_cols = [c for c in df_odch.columns if c != "cas"] if not df_odch.empty else []
-    df_odch_valid = df_odch[df_odch["cas"].notna()] if not df_odch.empty else pd.DataFrame()
-    # Pokud jsou všechny cas NaT, použij celý df
-    if df_odch_valid.empty and not df_odch.empty:
-        df_odch_valid = df_odch.copy()
+    odh_col = "odh_cena" if "odh_cena" in df_odch.columns else (
+        [c for c in df_odch.columns if c != "cas"][0] if not df_odch.empty and len(df_odch.columns) > 1 else None
+    )
 
-    if not df_odch_valid.empty and val_cols:
-        last    = df_odch_valid.iloc[-1]
+    if not df_odch.empty and odh_col:
+        df_valid = df_odch[df_odch["cas"].notna()].copy()
+        if df_valid.empty:
+            df_valid = df_odch.copy()
+
+        last = df_valid.iloc[-1]
         cas_val = last["cas"]
-        if pd.isna(cas_val):
-            cas_str = "aktuální"
-        else:
-            cas_str = pd.Timestamp(cas_val).strftime("%d.%m. %H:%M")
-        first_val = last[val_cols[0]] if val_cols else None
 
-        st.markdown(f'<div class="section-label">Aktuální ({cas_str})</div>', unsafe_allow_html=True)
-        if first_val is not None:
-            color_v = "#ff3d57" if first_val > 3000 else "#ffd740" if first_val > 1500 else "#00e676"
-            st.markdown(
-                f'<div class="val-big" style="color:{color_v}">{first_val:.2f} Kč/MWh</div>',
-                unsafe_allow_html=True
+        # Aktuální interval
+        if pd.notna(cas_val):
+            cas_from = pd.Timestamp(cas_val)
+            cas_to   = cas_from + timedelta(minutes=15)
+            interval_str = f"{cas_from.strftime('%H:%M')} – {cas_to.strftime('%H:%M')}"
+            date_str     = cas_from.strftime("%d.%m.%Y")
+        else:
+            interval_str = "—"
+            date_str     = "—"
+
+        first_val = last[odh_col]
+        color_v   = "#ff3d57" if first_val < 0 else "#ffd740" if first_val > 3000 else "#00e676"
+
+        st.markdown(f'<div class="section-label">{date_str} &nbsp; {interval_str}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="val-big" style="color:{color_v}">{first_val:.2f} Kč/MWh</div>',
+            unsafe_allow_html=True
+        )
+
+        # Tabulka posledních 10 čtvrthodin
+        st.markdown('<div class="section-label" style="margin-top:14px">Posledních 10 čtvrthodin</div>', unsafe_allow_html=True)
+        df_tbl = df_valid.tail(10).copy().iloc[::-1].reset_index(drop=True)
+
+        rows_html = ""
+        for _, r in df_tbl.iterrows():
+            c = r["cas"]
+            if pd.notna(c):
+                c_ts  = pd.Timestamp(c)
+                datum = c_ts.strftime("%d.%m.")
+                intvl = f"{c_ts.strftime('%H:%M')} – {(c_ts + timedelta(minutes=15)).strftime('%H:%M')}"
+            else:
+                datum = "—"
+                intvl = "—"
+            cena = r[odh_col]
+            clr  = "#ff3d57" if cena < 0 else "#ffd740" if cena > 3000 else "#00e676"
+            rows_html += (
+                f"<tr>"
+                f"<td style='color:{SUBTEXT}'>{datum}</td>"
+                f"<td style='color:{SUBTEXT}'>{intvl}</td>"
+                f"<td style='color:{clr};text-align:right;font-weight:700'>{cena:.2f}</td>"
+                f"</tr>"
             )
 
-        html = ""
-        for col in val_cols[1:]:
-            v = last[col]
-            if v is not None:
-                html += (
-                    f'<div class="row-item">'
-                    f'<span class="row-name">{col}</span>'
-                    f'<span class="row-value" style="color:{TEXT}">{v:.2f}</span>'
-                    f'</div>'
-                )
-        if html:
-            st.markdown(html, unsafe_allow_html=True)
+        st.markdown(
+            f'<table class="odch-table">'
+            f'<thead><tr>'
+            f'<th>Datum</th><th>Interval</th><th style="text-align:right">Kč/MWh</th>'
+            f'</tr></thead>'
+            f'<tbody>{rows_html}</tbody>'
+            f'</table>',
+            unsafe_allow_html=True
+        )
     else:
         st.warning("Data odchylek nejsou dostupná")
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ── GRAF: DAM INDEXY HISTORIE ─────────────────────
+# ── GRAF: BASE LOAD HISTORIE ──────────────────────
 if not df_index.empty:
     fig_base = go.Figure()
     fig_base.add_trace(go.Scatter(
@@ -386,35 +432,40 @@ if not df_index.empty:
         fill="tozeroy", fillcolor="rgba(0,230,118,0.07)",
         hovertemplate="%{x|%d.%m.%Y}<br><b>%{y:.2f} EUR/MWh</b>",
     ))
-    fig_base.add_trace(go.Scatter(
-        x=df_index["date"], y=df_index["peak_load"],
-        name="Peak load", line=dict(color="#ffd740", width=1.2),
-        hovertemplate="%{x|%d.%m.%Y}<br><b>%{y:.2f} EUR/MWh</b>",
-    ))
-    fig_base.add_trace(go.Scatter(
-        x=df_index["date"], y=df_index["offpeak_load"],
-        name="Offpeak load", line=dict(color="#13b8f0", width=1.2),
-        hovertemplate="%{x|%d.%m.%Y}<br><b>%{y:.2f} EUR/MWh</b>",
-    ))
-    layout_base = base_layout(f"DAM indexy – {obdobi_label} [EUR/MWh]", "#00e676")
-    layout_base["height"] = 260
+    layout_base = base_layout("DAM Base load [EUR/MWh]", "#00e676", height=280)
+    layout_base["xaxis"]["rangeselector"] = dict(
+        buttons=range_buttons(),
+        bgcolor=PLOT_BG, activecolor=BORDER,
+        font=dict(color=LEG_COL, size=11, family="Courier New"),
+    )
+    layout_base["xaxis"]["rangeslider"] = dict(visible=False)
     fig_base.update_layout(**layout_base)
     st.plotly_chart(fig_base, use_container_width=True)
 
 # ── GRAF: ODCHYLKY HISTORIE ───────────────────────
-if not df_odch_valid.empty and val_cols:
-    fig_odch = go.Figure()
-    colors = ["#ffd740", "#ff3d57", "#13b8f0", "#00e676"]
-    for i, col in enumerate(val_cols[:3]):
+if not df_odch.empty and odh_col:
+    df_plot = df_odch[df_odch["cas"].notna()].copy()
+    if df_plot.empty:
+        df_plot = df_odch.copy()
+
+    if not df_plot.empty:
+        fig_odch = go.Figure()
         fig_odch.add_trace(go.Scatter(
-            x=df_odch_valid["cas"], y=df_odch_valid[col],
-            name=col, line=dict(color=colors[i % len(colors)], width=1.0),
-            hovertemplate=f"%{{x|%d.%m %H:%M}}<br><b>%{{y:.2f}}</b>",
+            x=df_plot["cas"], y=df_plot[odh_col],
+            name="Odh. cena odchylky", line=dict(color="#ffd740", width=1.0),
+            hovertemplate="%{x|%d.%m %H:%M}<br><b>%{y:.2f} Kč/MWh</b>",
         ))
-    layout_odch = base_layout(f"Odhadovaná cena odchylky – {obdobi_label}", "#ffd740")
-    layout_odch["height"] = 260
-    fig_odch.update_layout(**layout_odch)
-    st.plotly_chart(fig_odch, use_container_width=True)
+        # Nulová linie
+        fig_odch.add_hline(y=0, line=dict(color=BORDER, width=1, dash="dot"))
+        layout_odch = base_layout("Odhadovaná cena odchylky [Kč/MWh]", "#ffd740", height=280)
+        layout_odch["xaxis"]["rangeselector"] = dict(
+            buttons=range_buttons(),
+            bgcolor=PLOT_BG, activecolor=BORDER,
+            font=dict(color=LEG_COL, size=11, family="Courier New"),
+        )
+        layout_odch["xaxis"]["rangeslider"] = dict(visible=False)
+        fig_odch.update_layout(**layout_odch)
+        st.plotly_chart(fig_odch, use_container_width=True)
 
 # ── FOOTER ─────────────────────────────────────────
 st.markdown(
@@ -425,7 +476,7 @@ st.markdown(
     '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">'
     f'<span style="font-size:0.75rem;color:{SUBTEXT};">DAM: ENTSO-E &nbsp;|&nbsp; Odchylky: ČEPS, a.s.</span>'
     '<span style="font-size:0.75rem;color:#8899bb;font-style:italic;">oldrich by claude</span>'
-    '<span style="font-family:\'Cinzel\',serif;font-size:0.85rem;color:#8899bb;letter-spacing:2px;">Ora et labora</span>'
+    '<span style="font-family:\'Cinzel\',serif;font-size:0.85rem;color:#8899bb;letter-spacing:2px;">Carpe diem, hora ruit</span>'
     '</div>',
     unsafe_allow_html=True
 )
