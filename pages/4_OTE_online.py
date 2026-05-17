@@ -463,7 +463,6 @@ with gcol_odch:
             ))
             fig_odch.add_hline(y=0, line=dict(color=BORDER, width=1, dash="dot"))
             layout_odch = base_layout("Odhadovaná cena odchylky [Kč/MWh]", "#ffd740", height=280)
-            layout_odch["yaxis"]["type"] = "linear"
             layout_odch["hovermode"] = False
             layout_odch["xaxis"]["rangeselector"] = dict(
                 buttons=[
