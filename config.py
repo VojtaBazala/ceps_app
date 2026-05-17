@@ -14,8 +14,8 @@ EMAIL_RECIPIENTS = [
 # ── ALERT THRESHOLDY – FREKVENCE ──────────────────
 
 # Aktuální frekvence mimo tento rozsah → alert
-FREQ_MIN = 49.999   # Hz
-FREQ_MAX = 50.001   # Hz
+FREQ_MIN = 49.85   # Hz
+FREQ_MAX = 50.15   # Hz
 
 # Kumulativní odchylka kapacity 1 MW BESS
 DELTA_1H_MAX = 0.10   # MWh za 1 hodinu
