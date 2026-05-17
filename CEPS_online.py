@@ -357,6 +357,31 @@ if not df_cena.empty:
 
 st.caption("Data: ČEPS, a.s. – Oficiální SOAP API (cepsdata.asmx)")
 
+# ── MORSE ──────────────────────────────────────────
+MORSE = "-.-. .- .-. .--. .   -.. .. . --  --..--   .... --- .-. .-   .-. ..- .. -"
+PLAIN = "Carpe diem, hora ruit"
+
+if "morse_revealed" not in st.session_state:
+    st.session_state.morse_revealed = False
+
+morse_col, btn_col, _ = st.columns([8, 1.5, 2])
+with morse_col:
+    st.markdown(
+        f'<div style="font-family:\'Courier New\',monospace;font-size:0.7rem;'
+        f'color:{SUBTEXT};letter-spacing:2px;margin-top:4px;">{MORSE}</div>',
+        unsafe_allow_html=True
+    )
+with btn_col:
+    if st.button("∿ translate", use_container_width=True):
+        st.session_state.morse_revealed = not st.session_state.morse_revealed
+
+if st.session_state.morse_revealed:
+    st.markdown(
+        f'<div style="font-family:\'Courier New\',monospace;font-size:0.75rem;'
+        f'color:#ffd740;letter-spacing:2px;font-style:italic;">{PLAIN}</div>',
+        unsafe_allow_html=True
+    )
+
 if st.session_state.auto_refresh:
     time.sleep(1)
     st.session_state.countdown -= 1
