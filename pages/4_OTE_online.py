@@ -375,19 +375,23 @@ if not df_index.empty:
     st.plotly_chart(fig_base, use_container_width=True)
 
 # ── GRAF: ODCHYLKY HISTORIE ───────────────────────
-if not df_odch.empty and len(val_cols) > 0:
-    fig_odch = go.Figure()
-    colors = ["#ffd740", "#ff3d57", "#13b8f0", "#00e676"]
-    for i, col in enumerate(val_cols[:3]):
-        fig_odch.add_trace(go.Scatter(
-            x=df_odch["cas"], y=df_odch[col],
-            name=col, line=dict(color=colors[i % len(colors)], width=1.0),
-            hovertemplate=f"%{{x|%d.%m %H:%M}}<br><b>%{{y:.2f}}</b>",
-        ))
-    layout_odch = base_layout(f"Odhadovaná cena odchylky – {obdobi_label}", "#ffd740")
-    layout_odch["height"] = 260
-    fig_odch.update_layout(**layout_odch)
-    st.plotly_chart(fig_odch, use_container_width=True)
+if not df_odch.empty:
+    val_cols = [c for c in df_odch.columns if c != "cas"]
+    df_odch_valid = df_odch.dropna(subset=["cas"])
+    if not df_odch_valid.empty and len(val_cols) > 0:
+    if not df_odch_valid.empty and len(val_cols) > 0:
+        fig_odch = go.Figure()
+        colors = ["#ffd740", "#ff3d57", "#13b8f0", "#00e676"]
+        for i, col in enumerate(val_cols[:3]):
+            fig_odch.add_trace(go.Scatter(
+                x=df_odch_valid["cas"], y=df_odch_valid[col],
+                name=col, line=dict(color=colors[i % len(colors)], width=1.0),
+                hovertemplate=f"%{{x|%d.%m %H:%M}}<br><b>%{{y:.2f}}</b>",
+            ))
+        layout_odch = base_layout(f"Odhadovaná cena odchylky – {obdobi_label}", "#ffd740")
+        layout_odch["height"] = 260
+        fig_odch.update_layout(**layout_odch)
+        st.plotly_chart(fig_odch, use_container_width=True)
 
 # ── FOOTER ─────────────────────────────────────────
 st.markdown(
