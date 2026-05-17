@@ -453,11 +453,6 @@ with gcol_odch:
         if df_plot.empty:
             df_plot = df_odch.copy()
         if not df_plot.empty:
-            # Ořízni Y osu na 99. percentil, extrémy anotuj
-            p99 = df_plot[odh_col].quantile(0.99)
-            p01 = df_plot[odh_col].quantile(0.01)
-            y_max = max(abs(p99), abs(p01)) * 1.2
-            outliers = df_plot[(df_plot[odh_col] > y_max) | (df_plot[odh_col] < -y_max)]
             # Odstraň outliers (chybné hodnoty mimo reálný rozsah)
             df_plot = df_plot[df_plot[odh_col].between(-50000, 50000)].copy()
             fig_odch = go.Figure()
@@ -467,17 +462,8 @@ with gcol_odch:
                 hovertemplate="%{x|%d.%m %H:%M}<br><b>%{y:.2f} Kč/MWh</b>",
             ))
             fig_odch.add_hline(y=0, line=dict(color=BORDER, width=1, dash="dot"))
-            # Anotuj extrémy šipkou
-            for _, row in outliers.iterrows():
-                fig_odch.add_annotation(
-                    x=row["cas"], y=y_max * 0.95,
-                    text=f"⚡ {row[odh_col]:.0f}",
-                    showarrow=True, arrowhead=2, arrowcolor="#ff3d57",
-                    font=dict(color="#ff3d57", size=9, family="Courier New"),
-                    bgcolor=PLOT_BG, bordercolor="#ff3d57",
-                )
             layout_odch = base_layout("Odhadovaná cena odchylky [Kč/MWh]", "#ffd740", height=280)
-            layout_odch["yaxis"]["range"] = [-y_max, y_max]
+            layout_odch["yaxis"]["type"] = "linear"
             layout_odch["xaxis"]["rangeselector"] = dict(
                 buttons=[
                     dict(count=7,  label="1T", step="day", stepmode="backward"),
