@@ -42,6 +42,17 @@ engine = create_engine(DB_URL.replace("postgres://", "postgresql://", 1))
 delivery_date = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
 print(f"Stahuji mFRR+ pro: {delivery_date}")
 
+# ── CHECK: data už jsou v DB? ──────────────────────
+try:
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT COUNT(*) FROM mfrr_orderbook WHERE trade_date = :d"), {"d": delivery_date})
+        count = result.scalar()
+    if count > 0:
+        print(f"mFRR+ pro {delivery_date} již v DB ({count} řádků) – přeskakuji")
+        sys.exit(0)
+except Exception:
+    pass
+
 # interval: 23:00 UTC dnes → 23:00 UTC zítra
 today_utc    = datetime.now(timezone.utc).replace(hour=23, minute=0, second=0, microsecond=0)
 tomorrow_utc = today_utc + timedelta(days=1)
