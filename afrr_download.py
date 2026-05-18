@@ -63,6 +63,17 @@ def df_to_excel_bytes(df):
 delivery_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
 print(f"Stahuji aFRR pro: {delivery_date}")
 
+# ── CHECK: data už jsou v DB? ──────────────────────
+try:
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT COUNT(*) FROM afrr_overview WHERE trade_date = :d"), {"d": delivery_date})
+        count = result.scalar()
+    if count > 0:
+        print(f"aFRR pro {delivery_date} již v DB ({count} řádků) – přeskakuji")
+        sys.exit(0)
+except Exception:
+    pass
+
 BASE = "https://www.regelleistung.net/apps/crds/api/v2/tenders/results"
 hdrs = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
