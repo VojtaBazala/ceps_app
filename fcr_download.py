@@ -17,13 +17,12 @@ from email.mime.base import MIMEBase
 from email import encoders
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
-from config import EMAIL_RECIPIENTS
 
 # ── KONFIGURACE ────────────────────────────────────
 DB_URL         = os.environ.get("DATABASE_URL", "")
 GMAIL_USER     = "oldrich.bazala@gmail.com"
 GMAIL_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
-EMAIL_TO       = ", ".join(EMAIL_RECIPIENTS)
+EMAIL_TO       = "oldrich@bhfund.eu"
 FIRST_RUN      = os.environ.get("FIRST_RUN", "true").lower() == "true"
 
 if not DB_URL:
@@ -63,8 +62,18 @@ def df_to_excel_bytes(df):
 
 # ── STAŽENÍ FCR ────────────────────────────────────
 delivery_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-today         = datetime.now().strftime("%Y-%m-%d")
 print(f"Stahuji FCR pro: {delivery_date}")
+
+# ── CHECK: data už jsou v DB? ──────────────────────
+try:
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT COUNT(*) FROM fcr_overview WHERE trade_date = :d"), {"d": delivery_date})
+        count = result.scalar()
+    if count > 0:
+        print(f"FCR pro {delivery_date} již v DB ({count} řádků) – přeskakuji")
+        sys.exit(0)
+except Exception:
+    pass  # Tabulka ještě neexistuje – pokračujeme
 
 BASE = "https://www.regelleistung.net/apps/crds/api/v2/tenders/results"
 hdrs = {
@@ -96,6 +105,7 @@ if resp.status_code == 200 and len(resp.content) > 100:
         print(f"Chyba pri parsovani: {e}")
 
 if not data_ok:
+    # Data nejsou dostupná
     if FIRST_RUN:
         send_email(
             subject=f"FCR [{delivery_date}] – data zatím nejsou k dispozici",
